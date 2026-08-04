@@ -1,5 +1,6 @@
 import { LoginForm } from "@/components/login-form";
 import { LogoutButton } from "@/components/logout-button";
+import { ProfilePanel } from "@/components/profile-panel";
 import { createClient } from "@/lib/supabase/server";
 import { ArrowRight, Gavel, Radio } from "lucide-react";
 import Link from "next/link";
@@ -56,14 +57,29 @@ function LoginScreen() {
   );
 }
 
-function AppHome({ email }: { email?: string }) {
+function AppHome({
+  email,
+  name,
+  shippingAddress,
+}: {
+  email: string;
+  name?: string;
+  shippingAddress?: string;
+}) {
   return (
     <main className="min-h-svh bg-[#f7f4ed] text-[#171712]">
       <header className="border-b border-black/10">
         <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6 lg:px-10">
           <Brand />
           <div className="flex items-center gap-4">
-            <span className="hidden text-sm text-black/50 sm:inline">{email}</span>
+            <span className="hidden text-sm text-black/50 md:inline">
+              {name || email}
+            </span>
+            <ProfilePanel
+              email={email}
+              initialName={name}
+              initialShippingAddress={shippingAddress}
+            />
             <LogoutButton />
           </div>
         </div>
@@ -111,7 +127,20 @@ async function HomeContent({
     const { data } = await supabase.auth.getClaims();
 
     if (data?.claims) {
-      return <AppHome email={data.claims.email as string | undefined} />;
+      const userEmail = (data.claims.email as string | undefined) ?? "";
+      const { data: profile } = await supabase
+        .from("users")
+        .select("email, full_name, shipping_address")
+        .eq("email", userEmail)
+        .maybeSingle();
+
+      return (
+        <AppHome
+          email={profile?.email ?? userEmail}
+          name={profile?.full_name ?? undefined}
+          shippingAddress={profile?.shipping_address ?? undefined}
+        />
+      );
     }
   }
 
