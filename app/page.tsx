@@ -1,58 +1,131 @@
-import { DeployButton } from "@/components/deploy-button";
-import { EnvVarWarning } from "@/components/env-var-warning";
-import { AuthButton } from "@/components/auth-button";
-import { Hero } from "@/components/hero";
-import { ThemeSwitcher } from "@/components/theme-switcher";
-import { ConnectSupabaseSteps } from "@/components/tutorial/connect-supabase-steps";
-import { SignUpUserSteps } from "@/components/tutorial/sign-up-user-steps";
-import { hasEnvVars } from "@/lib/utils";
+import { LoginForm } from "@/components/login-form";
+import { LogoutButton } from "@/components/logout-button";
+import { createClient } from "@/lib/supabase/server";
+import { ArrowRight, Gavel, Radio } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";
 
-export default function Home() {
+function Brand() {
   return (
-    <main className="min-h-screen flex flex-col items-center">
-      <div className="flex-1 w-full flex flex-col gap-20 items-center">
-        <nav className="w-full flex justify-center border-b border-b-foreground/10 h-16">
-          <div className="w-full max-w-5xl flex justify-between items-center p-3 px-5 text-sm">
-            <div className="flex gap-5 items-center font-semibold">
-              <Link href={"/"}>Next.js Supabase Starter</Link>
-              <div className="flex items-center gap-2">
-                <DeployButton />
-              </div>
-            </div>
-            {!hasEnvVars ? (
-              <EnvVarWarning />
-            ) : (
-              <Suspense>
-                <AuthButton />
-              </Suspense>
-            )}
-          </div>
-        </nav>
-        <div className="flex-1 flex flex-col gap-20 max-w-5xl p-5">
-          <Hero />
-          <main className="flex-1 flex flex-col gap-6 px-4">
-            <h2 className="font-medium text-xl mb-4">Next steps</h2>
-            {hasEnvVars ? <SignUpUserSteps /> : <ConnectSupabaseSteps />}
-          </main>
+    <div className="flex items-center gap-3 text-lg font-semibold tracking-tight">
+      <span className="flex size-10 items-center justify-center rounded-xl bg-[#f15a29] text-white">
+        <Gavel className="size-5" aria-hidden="true" />
+      </span>
+      Public Auction
+    </div>
+  );
+}
+
+function LoginScreen() {
+  return (
+    <main className="relative flex min-h-svh overflow-hidden bg-[#f7f4ed] text-[#171712]">
+      <div className="pointer-events-none absolute -left-32 top-1/3 h-80 w-80 rounded-full bg-[#f15a29]/10 blur-3xl" />
+      <div className="pointer-events-none absolute -right-24 -top-24 h-96 w-96 rounded-full bg-[#f6c453]/20 blur-3xl" />
+
+      <section className="relative hidden w-1/2 flex-col justify-between bg-[#191914] p-12 text-white lg:flex xl:p-16">
+        <Brand />
+
+        <div className="max-w-xl">
+          <p className="mb-5 text-sm font-semibold uppercase tracking-[0.22em] text-[#f6c453]">
+            Live shopping, reimagined
+          </p>
+          <h1 className="text-5xl font-semibold leading-[1.05] tracking-[-0.04em] xl:text-6xl">
+            Bid live. Find something remarkable.
+          </h1>
+          <p className="mt-6 max-w-md text-lg leading-8 text-white/60">
+            Join live auctions, discover one-of-a-kind pieces, and take home
+            your next great find.
+          </p>
         </div>
 
-        <footer className="w-full flex items-center justify-center border-t mx-auto text-center text-xs gap-8 py-16">
-          <p>
-            Powered by{" "}
-            <a
-              href="https://supabase.com/?utm_source=create-next-app&utm_medium=template&utm_term=nextjs"
-              target="_blank"
-              className="font-bold hover:underline"
-              rel="noreferrer"
-            >
-              Supabase
-            </a>
+        <p className="text-sm text-white/35">Bid confidently. Shop securely.</p>
+      </section>
+
+      <section className="relative flex w-full items-center justify-center px-6 py-12 lg:w-1/2 lg:px-12">
+        <div className="w-full max-w-[420px]">
+          <div className="mb-10 lg:hidden">
+            <Brand />
+          </div>
+          <LoginForm />
+          <p className="mt-8 text-center text-xs leading-5 text-black/40">
+            By continuing, you agree to our Terms of Service and Privacy Policy.
           </p>
-          <ThemeSwitcher />
-        </footer>
-      </div>
+        </div>
+      </section>
     </main>
+  );
+}
+
+function AppHome({ email }: { email?: string }) {
+  return (
+    <main className="min-h-svh bg-[#f7f4ed] text-[#171712]">
+      <header className="border-b border-black/10">
+        <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6 lg:px-10">
+          <Brand />
+          <div className="flex items-center gap-4">
+            <span className="hidden text-sm text-black/50 sm:inline">{email}</span>
+            <LogoutButton />
+          </div>
+        </div>
+      </header>
+
+      <section className="mx-auto max-w-7xl px-6 py-16 lg:px-10 lg:py-24">
+        <div className="max-w-3xl">
+          <div className="mb-5 inline-flex items-center gap-2 rounded-full bg-[#f15a29]/10 px-4 py-2 text-sm font-semibold text-[#d94719]">
+            <Radio className="size-4" /> Live auctions are happening now
+          </div>
+          <h1 className="text-5xl font-semibold leading-[1.05] tracking-[-0.045em] sm:text-6xl">
+            Your next great find is going once, going twice...
+          </h1>
+          <p className="mt-6 max-w-2xl text-lg leading-8 text-black/55">
+            Explore live shows, bid in real time, and discover pieces worth
+            talking about.
+          </p>
+          <ButtonLink />
+        </div>
+      </section>
+    </main>
+  );
+}
+
+function ButtonLink() {
+  return (
+    <Link
+      href="/shows"
+      className="mt-9 inline-flex h-12 items-center gap-2 rounded-xl bg-[#f15a29] px-6 font-semibold text-white transition-colors hover:bg-[#d94719]"
+    >
+      Browse live shows <ArrowRight className="size-4" />
+    </Link>
+  );
+}
+
+async function HomeContent({
+  searchParams,
+}: {
+  searchParams: Promise<{ signedIn?: string }>;
+}) {
+  const { signedIn } = await searchParams;
+
+  if (signedIn === "true") {
+    const supabase = await createClient();
+    const { data } = await supabase.auth.getClaims();
+
+    if (data?.claims) {
+      return <AppHome email={data.claims.email as string | undefined} />;
+    }
+  }
+
+  return <LoginScreen />;
+}
+
+export default function Home({
+  searchParams,
+}: {
+  searchParams: Promise<{ signedIn?: string }>;
+}) {
+  return (
+    <Suspense fallback={<LoginScreen />}>
+      <HomeContent searchParams={searchParams} />
+    </Suspense>
   );
 }
