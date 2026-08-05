@@ -1,7 +1,13 @@
 import { updateSession } from "@/lib/supabase/proxy";
-import { type NextRequest } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 
 export async function proxy(request: NextRequest) {
+   if (
+    process.env.NODE_ENV === 'development' &&
+    request.headers.get('x-bypass-test') === 'true'
+  ){
+    return NextResponse.next();
+  }
   return await updateSession(request);
 }
 
