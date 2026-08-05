@@ -1,12 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 
-// Gunakan Service Role Key agar API ini bisa melewati RLS dan memproses kedaluwarsa secara bulk
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-
 export async function GET(request: Request) {
   try {
     // 1. Validasi token keamanan di Header untuk mencegah penembakan API oleh publik
@@ -15,7 +9,13 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Unauthorized Access.' }, { status: 401 });
     }
 
-    // 2. Panggil fungsi database pelepasan hold kedaluwarsa (RPC release_expired_holds) [2]
+    // 2. Inisialisasi Supabase Admin secara aman di dalam handler
+    const supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+
+    // 3. Panggil fungsi database pelepasan hold kedaluwarsa (RPC release_expired_holds)
     const { data, error } = await supabaseAdmin.rpc('release_expired_holds');
 
     if (error) {
@@ -24,22 +24,43 @@ export async function GET(request: Request) {
     }
 
     const releasedCount = data?.released_count || 0;
+    const releasedLots: string[] = data?.released_lots || [];
 
-    // 3. Jika ada barang yang dibebaskan, broadcast event (lot.released) ke penonton [2]
-    if (releasedCount > 0) {
+    // 4. Jika ada barang yang dibebaskan, broadcast event (lot.released) untuk masing-masing lot_id
+    if (releasedCount > 0 && releasedLots.length > 0) {
       const channel = supabaseAdmin.channel('auction_session');
-      await channel.subscribe();
-      await channel.send({
-        type: 'broadcast',
-        event: 'lot.released',
-        payload: { released_count: releasedCount },
+      
+      // Bungkus subscribe ke dalam Promise agar runtime serverless tidak menghentikan fungsi sebelum event terkirim
+      await new Promise<void>((resolve, reject) => {
+        channel.subscribe(async (status) => {
+          if (status === 'SUBSCRIBED') {
+            try {
+              // Kirim sinyal broadcast individual untuk setiap lot yang dilepas sesuai spec
+              for (const lotId of releasedLots) {
+                await channel.send({
+                  type: 'broadcast',
+                  event: 'lot.released',
+                  payload: { lot_id: lotId },
+                });
+              }
+              resolve();
+            } catch (err) {
+              reject(err);
+            } finally {
+              supabaseAdmin.removeChannel(channel);
+            }
+          } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            supabaseAdmin.removeChannel(channel);
+            reject(new Error(`Gagal terhubung ke channel realtime: ${status}`));
+          }
+        });
       });
-      await supabaseAdmin.removeChannel(channel);
     }
 
     return NextResponse.json({
       success: true,
-      message: `Pengecekan selesai. ${releasedCount} hold kedaluwarsa berhasil dilepaskan.`
+      message: `Pengecekan selesai. ${releasedCount} hold kedaluwarsa berhasil dilepaskan.`,
+      released_lots: releasedLots
     }, { status: 200 });
 
   } catch (err: any) {
