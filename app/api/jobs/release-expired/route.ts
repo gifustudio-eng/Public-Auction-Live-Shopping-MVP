@@ -1,23 +1,26 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
-
-export const dynamic = 'force-dynamic';
+import { headers } from 'next/headers'; // <-- 1. IMPORT UTILITY HEADERS NEXT.JS
 
 export async function GET(request: Request) {
   try {
-    // 1. Validasi token keamanan di Header untuk mencegah penembakan API oleh publik
-    const authHeader = request.headers.get('authorization');
+    // 2. BACA HEADER DENGAN AWAIT HEADERS() 
+    // Panggilan ini secara otomatis memberi tahu Vercel: "Jangan prerender halaman ini!"
+    const headersList = await headers();
+    const authHeader = headersList.get('authorization');
+
+    // 3. Validasi token keamanan di Header seperti biasa
     if (authHeader !== `Bearer ${process.env.CRON_SECRET_TOKEN}`) {
       return NextResponse.json({ error: 'Unauthorized Access.' }, { status: 401 });
     }
 
-    // 2. Inisialisasi Supabase Admin secara aman di dalam handler
+    // 4. Inisialisasi Supabase Admin secara aman di dalam handler
     const supabaseAdmin = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
 
-    // 3. Panggil fungsi database pelepasan hold kedaluwarsa (RPC release_expired_holds)
+    // 5. Panggil fungsi database pelepasan hold kedaluwarsa (RPC release_expired_holds) [2]
     const { data, error } = await supabaseAdmin.rpc('release_expired_holds');
 
     if (error) {
@@ -28,16 +31,16 @@ export async function GET(request: Request) {
     const releasedCount = data?.released_count || 0;
     const releasedLots: string[] = data?.released_lots || [];
 
-    // 4. Jika ada barang yang dibebaskan, broadcast event (lot.released) untuk masing-masing lot_id
+    // 6. Jika ada barang yang dibebaskan, broadcast event (lot.released) [2]
     if (releasedCount > 0 && releasedLots.length > 0) {
       const channel = supabaseAdmin.channel('auction_session');
       
-      // Bungkus subscribe ke dalam Promise agar runtime serverless tidak menghentikan fungsi sebelum event terkirim
+      // Bungkus subscribe ke dalam Promise agar runtime serverless tidak memotong fungsi sebelum event terkirim
       await new Promise<void>((resolve, reject) => {
         channel.subscribe(async (status) => {
           if (status === 'SUBSCRIBED') {
             try {
-              // Kirim sinyal broadcast individual untuk setiap lot yang dilepas sesuai spec
+              // Kirim sinyal broadcast individual untuk setiap lot yang dilepas sesuai spec [2]
               for (const lotId of releasedLots) {
                 await channel.send({
                   type: 'broadcast',
