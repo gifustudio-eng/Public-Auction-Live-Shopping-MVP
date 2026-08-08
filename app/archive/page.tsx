@@ -1,6 +1,7 @@
 import { AuctionHeader } from "@/components/auction-header";
 import { createClient } from "@/lib/supabase/server";
 import { Archive, CalendarDays, Check, PackageCheck } from "lucide-react";
+import { Suspense } from "react";
 
 const pastShows = [
   { date: "Aug 2, 2026", title: "Rare Books & First Editions", lots: 32, sold: 27, accent: "bg-[#a9593b]" },
@@ -28,12 +29,17 @@ async function getViewer() {
   };
 }
 
-export default async function ArchivePage() {
+async function ViewerHeader() {
   const viewer = await getViewer();
+  return <AuctionHeader {...viewer} />;
+}
 
+export default function ArchivePage() {
   return (
     <main className="min-h-svh bg-[#f7f4ed] text-[#171712]">
-      <AuctionHeader {...viewer} />
+      <Suspense fallback={<AuctionHeader />}>
+        <ViewerHeader />
+      </Suspense>
       <section className="mx-auto max-w-7xl px-6 pb-20 pt-14 lg:px-10 lg:pb-28 lg:pt-20">
         <div className="max-w-3xl">
           <div className="mb-5 inline-flex items-center gap-2 rounded-full bg-black/[0.06] px-4 py-2 text-sm font-semibold text-black/60">

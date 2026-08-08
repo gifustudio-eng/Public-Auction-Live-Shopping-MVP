@@ -7,6 +7,7 @@ import {
   Radio,
   Sparkles,
 } from "lucide-react";
+import { Suspense } from "react";
 
 const shows = [
   {
@@ -74,12 +75,17 @@ async function getViewer() {
   };
 }
 
-export default async function ShowsPage() {
+async function ViewerHeader() {
   const viewer = await getViewer();
+  return <AuctionHeader {...viewer} />;
+}
 
+export default function ShowsPage() {
   return (
     <main className="min-h-svh bg-[#f7f4ed] text-[#171712]">
-      <AuctionHeader {...viewer} />
+      <Suspense fallback={<AuctionHeader />}>
+        <ViewerHeader />
+      </Suspense>
 
       <section className="mx-auto max-w-7xl px-6 pb-20 pt-14 lg:px-10 lg:pb-28 lg:pt-20">
         <div className="flex flex-col justify-between gap-8 border-b border-black/10 pb-12 lg:flex-row lg:items-end">
