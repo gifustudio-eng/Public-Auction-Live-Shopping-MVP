@@ -1,13 +1,12 @@
 import { createClient } from '@supabase/supabase-js';
-import { NextResponse } from 'next/server';
-import { headers } from 'next/headers'; // <-- 1. IMPORT UTILITY HEADERS NEXT.JS
+import { connection, NextResponse } from 'next/server';
 
 export async function GET(request: Request) {
   try {
-    // 2. BACA HEADER DENGAN AWAIT HEADERS() 
-    // Panggilan ini secara otomatis memberi tahu Vercel: "Jangan prerender halaman ini!"
-    const headersList = await headers();
-    const authHeader = headersList.get('authorization');
+    // GET route handlers can be prerendered when Cache Components is enabled.
+    // Wait for an actual request before reading request-specific values.
+    await connection();
+    const authHeader = request.headers.get('authorization');
 
     // 3. Validasi token keamanan di Header seperti biasa
     if (authHeader !== `Bearer ${process.env.CRON_SECRET_TOKEN}`) {
@@ -68,7 +67,7 @@ export async function GET(request: Request) {
       released_lots: releasedLots
     }, { status: 200 });
 
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Cron error /api/jobs/release-expired:', err);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
