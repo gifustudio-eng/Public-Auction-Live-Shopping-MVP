@@ -1,21 +1,9 @@
 import { LoginForm } from "@/components/login-form";
-import { LogoutButton } from "@/components/logout-button";
-import { ProfilePanel } from "@/components/profile-panel";
+import { AuctionHeader, Brand } from "@/components/auction-header";
 import { createClient } from "@/lib/supabase/server";
-import { ArrowRight, Gavel, Radio } from "lucide-react";
+import { ArrowRight, Radio } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";
-
-function Brand() {
-  return (
-    <div className="flex items-center gap-3 text-lg font-semibold tracking-tight">
-      <span className="flex size-10 items-center justify-center rounded-xl bg-[#f15a29] text-white">
-        <Gavel className="size-5" aria-hidden="true" />
-      </span>
-      Public Auction
-    </div>
-  );
-}
 
 function LoginScreen() {
   return (
@@ -68,22 +56,11 @@ function AppHome({
 }) {
   return (
     <main className="min-h-svh bg-[#f7f4ed] text-[#171712]">
-      <header className="border-b border-black/10">
-        <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6 lg:px-10">
-          <Brand />
-          <div className="flex items-center gap-4">
-            <span className="hidden text-sm text-black/50 md:inline">
-              {name || email}
-            </span>
-            <ProfilePanel
-              email={email}
-              initialName={name}
-              initialShippingAddress={shippingAddress}
-            />
-            <LogoutButton />
-          </div>
-        </div>
-      </header>
+      <AuctionHeader
+        email={email}
+        name={name}
+        shippingAddress={shippingAddress}
+      />
 
       <section className="mx-auto max-w-7xl px-6 py-16 lg:px-10 lg:py-24">
         <div className="max-w-3xl">
