@@ -1,6 +1,7 @@
 import { AuctionHeader } from "@/components/auction-header";
 import { createClient } from "@/lib/supabase/server";
-import { Archive, CalendarDays, Check, PackageCheck } from "lucide-react";
+import { Archive, ArrowLeft, CalendarDays, Check, PackageCheck } from "lucide-react";
+import Link from "next/link";
 import { Suspense } from "react";
 
 const pastShows = [
@@ -41,6 +42,15 @@ export default function ArchivePage() {
         <ViewerHeader />
       </Suspense>
       <section className="mx-auto max-w-7xl px-6 pb-20 pt-14 lg:px-10 lg:pb-28 lg:pt-20">
+        <div className="mb-8 flex justify-start">
+          <Link
+            href="/shows"
+            className="inline-flex h-11 items-center gap-2 rounded-xl border border-black/10 bg-white px-4 text-sm font-semibold text-black/65 transition-colors hover:border-black/20 hover:text-black"
+          >
+            <ArrowLeft className="size-4" />
+            Back to shows
+          </Link>
+        </div>
         <div className="max-w-3xl">
           <div className="mb-5 inline-flex items-center gap-2 rounded-full bg-black/[0.06] px-4 py-2 text-sm font-semibold text-black/60">
             <Archive className="size-4" /> Show archive

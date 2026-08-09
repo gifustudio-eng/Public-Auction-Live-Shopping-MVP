@@ -1,5 +1,4 @@
 import { Gavel } from "lucide-react";
-import Link from "next/link";
 
 import { LogoutButton } from "@/components/logout-button";
 import { ProfilePanel } from "@/components/profile-panel";
@@ -30,11 +29,8 @@ export function AuctionHeader({
     <header className="border-b border-black/10 bg-[#f7f4ed]">
       <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6 lg:px-10">
         <Brand />
-        {email ? (
+        {email && (
           <div className="flex items-center gap-4">
-            <span className="hidden text-sm text-black/50 md:inline">
-              {name || email}
-            </span>
             <ProfilePanel
               email={email}
               initialName={name}
@@ -42,13 +38,6 @@ export function AuctionHeader({
             />
             <LogoutButton />
           </div>
-        ) : (
-          <Link
-            href="/"
-            className="text-sm font-semibold text-black/60 transition-colors hover:text-black"
-          >
-            Back home
-          </Link>
         )}
       </div>
     </header>

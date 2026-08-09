@@ -1,12 +1,14 @@
 import { AuctionHeader } from "@/components/auction-header";
 import { createClient } from "@/lib/supabase/server";
 import {
+  Archive,
   ArrowRight,
   CalendarDays,
   Clock3,
   Radio,
   Sparkles,
 } from "lucide-react";
+import Link from "next/link";
 import { Suspense } from "react";
 
 const shows = [
@@ -88,6 +90,15 @@ export default function ShowsPage() {
       </Suspense>
 
       <section className="mx-auto max-w-7xl px-6 pb-20 pt-14 lg:px-10 lg:pb-28 lg:pt-20">
+        <div className="mb-8 flex justify-end">
+          <Link
+            href="/archive"
+            className="inline-flex h-11 items-center gap-2 rounded-xl border border-black/10 bg-white px-4 text-sm font-semibold text-black/65 transition-colors hover:border-black/20 hover:text-black"
+          >
+            <Archive className="size-4" />
+            View archive
+          </Link>
+        </div>
         <div className="flex flex-col justify-between gap-8 border-b border-black/10 pb-12 lg:flex-row lg:items-end">
           <div className="max-w-3xl">
             <div className="mb-5 inline-flex items-center gap-2 rounded-full bg-[#f15a29]/10 px-4 py-2 text-sm font-semibold text-[#d94719]">
