@@ -118,10 +118,10 @@ export default function ShowsPage() {
         </div>
 
         <div className="mt-10 grid gap-5">
-          {shows.map((show) => (
+          {shows.map((show, index) => {
+            const card = (
             <article
-              key={show.title}
-              className="group grid overflow-hidden rounded-3xl border border-black/10 bg-white transition-transform duration-300 hover:-translate-y-1 md:grid-cols-[190px_1fr_auto]"
+              className={`grid overflow-hidden rounded-3xl border border-black/10 bg-white md:grid-cols-[190px_1fr_auto] ${index === 0 ? "group transition-transform duration-300 hover:-translate-y-1" : ""}`}
             >
               <div className={`relative flex min-h-44 flex-col justify-between bg-gradient-to-br ${show.tone} p-6 text-white`}>
                 <Sparkles className="size-6 text-[#f6c453]" />
@@ -149,13 +149,28 @@ export default function ShowsPage() {
                 <p className="mt-3 max-w-2xl leading-6 text-black/55">{show.description}</p>
               </div>
 
-              <div className="flex items-center p-6 pt-0 md:p-8">
-                <span className="flex size-11 items-center justify-center rounded-full border border-black/10 text-black/55 transition-colors group-hover:border-[#f15a29] group-hover:bg-[#f15a29] group-hover:text-white">
-                  <ArrowRight className="size-4" />
-                </span>
-              </div>
+              {index === 0 && (
+                <div className="flex items-center p-6 pt-0 md:p-8">
+                  <span className="flex size-11 items-center justify-center rounded-full border border-black/10 text-black/55 transition-colors group-hover:border-[#f15a29] group-hover:bg-[#f15a29] group-hover:text-white">
+                    <ArrowRight className="size-4" />
+                  </span>
+                </div>
+              )}
             </article>
-          ))}
+            );
+
+            return index === 0 ? (
+              <Link
+                key={show.title}
+                href="/shows/mid-century-icons"
+                aria-label={`Open live show: ${show.title}`}
+              >
+                {card}
+              </Link>
+            ) : (
+              <div key={show.title}>{card}</div>
+            );
+          })}
         </div>
       </section>
     </main>
