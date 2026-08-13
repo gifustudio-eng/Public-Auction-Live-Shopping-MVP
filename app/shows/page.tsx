@@ -146,7 +146,7 @@ async function ShowsList() {
         return isFirst ? (
           <Link
             key={show.id}
-            href="/shows/mid-century-icons"
+            href={`/shows/${show.id}`}
             aria-label={`Open show: ${show.title}`}
           >
             {card}
