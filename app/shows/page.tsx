@@ -11,52 +11,41 @@ import {
 import Link from "next/link";
 import { Suspense } from "react";
 
-const shows = [
-  {
-    day: "Today",
-    date: "August 8",
-    time: "7:00 PM",
-    title: "Mid-Century Icons",
-    host: "Hosted by Mara Chen",
-    description: "Sculptural lighting, teak furniture, and design classics from the 1950s–70s.",
-    category: "Design",
-    live: true,
-    tone: "from-[#d96338] to-[#8f2f1d]",
-  },
-  {
-    day: "Sunday",
-    date: "August 9",
-    time: "11:00 AM",
-    title: "The Sunday Watch Edit",
-    host: "Hosted by Theo Laurent",
-    description: "A considered collection of vintage watches, from daily wearers to rare references.",
-    category: "Watches",
-    live: false,
-    tone: "from-[#314b45] to-[#172521]",
-  },
-  {
-    day: "Tuesday",
-    date: "August 11",
-    time: "8:30 PM",
-    title: "After Dark: Modern Art",
-    host: "Hosted by Ellis House",
-    description: "Bold editions, works on paper, and emerging artists selected for new collectors.",
-    category: "Art",
-    live: false,
-    tone: "from-[#74586e] to-[#30212d]",
-  },
-  {
-    day: "Thursday",
-    date: "August 13",
-    time: "6:00 PM",
-    title: "Objects With a Past",
-    host: "Hosted by June & Found",
-    description: "Curious antiques, storied silver, and characterful pieces for the collected home.",
-    category: "Antiques",
-    live: false,
-    tone: "from-[#b58b42] to-[#5f431e]",
-  },
+type Show = {
+  id: string;
+  title: string;
+  scheduled_at: string;
+  status: string;
+  stream_playback_url: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+const cardTones = [
+  "from-[#d96338] to-[#8f2f1d]",
+  "from-[#314b45] to-[#172521]",
+  "from-[#74586e] to-[#30212d]",
+  "from-[#b58b42] to-[#5f431e]",
 ];
+
+const dateFormatter = new Intl.DateTimeFormat("en-US", {
+  month: "long",
+  day: "numeric",
+  timeZone: "Asia/Jakarta",
+});
+
+const dayFormatter = new Intl.DateTimeFormat("en-US", {
+  weekday: "long",
+  timeZone: "Asia/Jakarta",
+});
+
+const timeFormatter = new Intl.DateTimeFormat("en-US", {
+  hour: "numeric",
+  minute: "2-digit",
+  timeZone: "Asia/Jakarta",
+  timeZoneName: "short",
+});
 
 async function getViewer() {
   const supabase = await createClient();
@@ -80,6 +69,113 @@ async function getViewer() {
 async function ViewerHeader() {
   const viewer = await getViewer();
   return <AuctionHeader {...viewer} />;
+}
+
+function ShowsLoading() {
+  return (
+    <div className="mt-10 grid gap-5" aria-label="Loading shows">
+      {[0, 1, 2].map((item) => (
+        <div
+          key={item}
+          className="h-44 animate-pulse rounded-3xl border border-black/5 bg-white/60"
+        />
+      ))}
+    </div>
+  );
+}
+
+async function ShowsList() {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("shows")
+    .select(
+      "id, title, scheduled_at, status, stream_playback_url, notes, created_at, updated_at",
+    )
+    .order("scheduled_at", { ascending: true });
+
+  if (error) {
+    console.error("Unable to load shows:", error);
+    return (
+      <div className="mt-10 rounded-3xl border border-red-200 bg-red-50 p-8 text-red-800">
+        Shows could not be loaded. Please try again shortly.
+      </div>
+    );
+  }
+
+  const shows = (data ?? []) as Show[];
+
+  if (shows.length === 0) {
+    return (
+      <div className="mt-10 rounded-3xl border border-black/10 bg-white p-10 text-center">
+        <CalendarDays className="mx-auto size-8 text-black/30" />
+        <h2 className="mt-4 text-xl font-semibold">No shows available yet</h2>
+        <p className="mt-2 text-black/50">Check back soon for the next auction.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-10 grid gap-5">
+      {shows.map((show, index) => {
+        const scheduledDate = new Date(show.scheduled_at);
+        const createdDate = new Date(show.created_at);
+        const isLive = show.status.toLowerCase() === "live";
+        const isFirst = index === 0;
+        const card = (
+          <article
+            className={`grid overflow-hidden rounded-3xl border border-black/10 bg-white md:grid-cols-[190px_1fr_auto] ${isFirst ? "group transition-transform duration-300 hover:-translate-y-1" : ""}`}
+          >
+            <div className={`relative flex min-h-44 flex-col justify-between bg-gradient-to-br ${cardTones[index % cardTones.length]} p-6 text-white`}>
+              <Sparkles className="size-6 text-[#f6c453]" />
+              <div>
+                <p className="text-sm text-white/65">{dayFormatter.format(scheduledDate)}</p>
+                <p className="mt-1 text-xl font-semibold">{dateFormatter.format(scheduledDate)}</p>
+              </div>
+            </div>
+
+            <div className="flex flex-col justify-center p-6 md:px-8 md:py-7">
+              <div className="flex flex-wrap items-center gap-3 text-sm font-medium">
+                <span className="flex items-center gap-1.5 text-[#d94719]">
+                  <Clock3 className="size-4" /> {timeFormatter.format(createdDate)}
+                </span>
+                <span className="text-black/25">•</span>
+                <span className="capitalize text-black/45">{show.status.replaceAll("_", " ")}</span>
+                {isLive && (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-[#f15a29]/10 px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-[#d94719]">
+                    <Radio className="size-3" /> Live
+                  </span>
+                )}
+              </div>
+              <h2 className="mt-3 text-2xl font-semibold tracking-[-0.025em]">{show.title}</h2>
+              {show.notes && (
+                <p className="mt-3 max-w-2xl leading-6 text-black/55">{show.notes}</p>
+              )}
+            </div>
+
+            {isFirst && (
+              <div className="flex items-center p-6 pt-0 md:p-8">
+                <span className="flex size-11 items-center justify-center rounded-full border border-black/10 text-black/55 transition-colors group-hover:border-[#f15a29] group-hover:bg-[#f15a29] group-hover:text-white">
+                  <ArrowRight className="size-4" />
+                </span>
+              </div>
+            )}
+          </article>
+        );
+
+        return isFirst ? (
+          <Link
+            key={show.id}
+            href="/shows/mid-century-icons"
+            aria-label={`Open show: ${show.title}`}
+          >
+            {card}
+          </Link>
+        ) : (
+          <div key={show.id}>{card}</div>
+        );
+      })}
+    </div>
+  );
 }
 
 export default function ShowsPage() {
@@ -117,61 +213,9 @@ export default function ShowsPage() {
           </div>
         </div>
 
-        <div className="mt-10 grid gap-5">
-          {shows.map((show, index) => {
-            const card = (
-            <article
-              className={`grid overflow-hidden rounded-3xl border border-black/10 bg-white md:grid-cols-[190px_1fr_auto] ${index === 0 ? "group transition-transform duration-300 hover:-translate-y-1" : ""}`}
-            >
-              <div className={`relative flex min-h-44 flex-col justify-between bg-gradient-to-br ${show.tone} p-6 text-white`}>
-                <Sparkles className="size-6 text-[#f6c453]" />
-                <div>
-                  <p className="text-sm text-white/65">{show.day}</p>
-                  <p className="mt-1 text-xl font-semibold">{show.date}</p>
-                </div>
-              </div>
-
-              <div className="flex flex-col justify-center p-6 md:px-8 md:py-7">
-                <div className="flex flex-wrap items-center gap-3 text-sm font-medium">
-                  <span className="flex items-center gap-1.5 text-[#d94719]">
-                    <Clock3 className="size-4" /> {show.time}
-                  </span>
-                  <span className="text-black/25">•</span>
-                  <span className="text-black/45">{show.category}</span>
-                  {show.live && (
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-[#f15a29]/10 px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-[#d94719]">
-                      <Radio className="size-3" /> Tonight
-                    </span>
-                  )}
-                </div>
-                <h2 className="mt-3 text-2xl font-semibold tracking-[-0.025em]">{show.title}</h2>
-                <p className="mt-1 text-sm font-medium text-black/45">{show.host}</p>
-                <p className="mt-3 max-w-2xl leading-6 text-black/55">{show.description}</p>
-              </div>
-
-              {index === 0 && (
-                <div className="flex items-center p-6 pt-0 md:p-8">
-                  <span className="flex size-11 items-center justify-center rounded-full border border-black/10 text-black/55 transition-colors group-hover:border-[#f15a29] group-hover:bg-[#f15a29] group-hover:text-white">
-                    <ArrowRight className="size-4" />
-                  </span>
-                </div>
-              )}
-            </article>
-            );
-
-            return index === 0 ? (
-              <Link
-                key={show.title}
-                href="/shows/mid-century-icons"
-                aria-label={`Open live show: ${show.title}`}
-              >
-                {card}
-              </Link>
-            ) : (
-              <div key={show.title}>{card}</div>
-            );
-          })}
-        </div>
+        <Suspense fallback={<ShowsLoading />}>
+          <ShowsList />
+        </Suspense>
       </section>
     </main>
   );
