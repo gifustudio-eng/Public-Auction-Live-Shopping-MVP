@@ -19,7 +19,7 @@ export async function GET(request: Request) {
     // 4. Inisialisasi Supabase Admin secara aman di dalam handler
     const supabaseAdmin = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
+      process.env.SUPABASE_SECRET_KEY!
     );
 
     // 5. Panggil fungsi database pelepasan hold kedaluwarsa (RPC release_expired_holds) [2]
