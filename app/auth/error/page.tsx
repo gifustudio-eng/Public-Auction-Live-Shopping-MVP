@@ -1,5 +1,4 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Suspense } from "react";
 
 async function ErrorContent({
   searchParams,
@@ -23,7 +22,7 @@ async function ErrorContent({
   );
 }
 
-export default function Page({
+export default async function Page({
   searchParams,
 }: {
   searchParams: Promise<{ error: string }>;
@@ -39,9 +38,7 @@ export default function Page({
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <Suspense>
-                <ErrorContent searchParams={searchParams} />
-              </Suspense>
+              <ErrorContent searchParams={searchParams} />
             </CardContent>
           </Card>
         </div>

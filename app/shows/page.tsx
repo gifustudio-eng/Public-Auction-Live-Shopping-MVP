@@ -9,7 +9,6 @@ import {
   Sparkles,
 } from "lucide-react";
 import Link from "next/link";
-import { Suspense } from "react";
 
 type Show = {
   id: string;
@@ -64,24 +63,6 @@ async function getViewer() {
     name: profile?.full_name ?? undefined,
     shippingAddress: profile?.shipping_address ?? undefined,
   };
-}
-
-async function ViewerHeader() {
-  const viewer = await getViewer();
-  return <AuctionHeader {...viewer} />;
-}
-
-function ShowsLoading() {
-  return (
-    <div className="mt-10 grid gap-5" aria-label="Loading shows">
-      {[0, 1, 2].map((item) => (
-        <div
-          key={item}
-          className="h-44 animate-pulse rounded-3xl border border-black/5 bg-white/60"
-        />
-      ))}
-    </div>
-  );
 }
 
 async function ShowsList() {
@@ -178,12 +159,12 @@ async function ShowsList() {
   );
 }
 
-export default function ShowsPage() {
+export default async function ShowsPage() {
+  const [viewer, showsList] = await Promise.all([getViewer(), ShowsList()]);
+
   return (
     <main className="min-h-svh bg-[#f7f4ed] text-[#171712]">
-      <Suspense fallback={<AuctionHeader />}>
-        <ViewerHeader />
-      </Suspense>
+      <AuctionHeader {...viewer} />
 
       <section className="mx-auto max-w-7xl px-6 pb-20 pt-14 lg:px-10 lg:pb-28 lg:pt-20">
         <div className="mb-8 flex justify-end">
@@ -213,9 +194,7 @@ export default function ShowsPage() {
           </div>
         </div>
 
-        <Suspense fallback={<ShowsLoading />}>
-          <ShowsList />
-        </Suspense>
+        {showsList}
       </section>
     </main>
   );

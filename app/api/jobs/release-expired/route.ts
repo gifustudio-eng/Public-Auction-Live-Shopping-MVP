@@ -1,14 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
-import { connection, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 
 export async function GET(request: Request) {
-  // This must stay outside the try/catch. During prerendering, connection()
-  // throws a framework control-flow signal that Next.js needs to handle.
-  await connection();
-
   try {
-    // GET route handlers can be prerendered when Cache Components is enabled.
-    // Wait for an actual request before reading request-specific values.
     const authHeader = request.headers.get('authorization');
 
     // 3. Validasi token keamanan di Header seperti biasa

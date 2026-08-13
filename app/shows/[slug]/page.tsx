@@ -8,7 +8,6 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Suspense } from "react";
 import BuyButton from "@/components/buy-button";
 
 const activeLots = [
@@ -56,11 +55,6 @@ async function getViewer() {
     name: profile?.full_name ?? undefined,
     shippingAddress: profile?.shipping_address ?? undefined,
   };
-}
-
-async function ViewerHeader() {
-  const viewer = await getViewer();
-  return <AuctionHeader {...viewer} />;
 }
 
 function ActiveLots() {
@@ -122,12 +116,11 @@ export default async function LiveShowPage({
 }) {
   const { slug } = await params;
   if (slug !== "mid-century-icons") notFound();
+  const viewer = await getViewer();
 
   return (
     <main className="min-h-svh bg-[#f7f4ed] text-[#171712]">
-      <Suspense fallback={<AuctionHeader />}>
-        <ViewerHeader />
-      </Suspense>
+      <AuctionHeader {...viewer} />
 
       <section className="mx-auto max-w-7xl px-6 pb-20 pt-8 lg:px-10 lg:pb-24 lg:pt-10">
         <Link

@@ -3,7 +3,6 @@ import { AuctionHeader, Brand } from "@/components/auction-header";
 import { createClient } from "@/lib/supabase/server";
 import { ArrowRight, Radio } from "lucide-react";
 import Link from "next/link";
-import { Suspense } from "react";
 
 function LoginScreen() {
   return (
@@ -124,14 +123,10 @@ async function HomeContent({
   return <LoginScreen />;
 }
 
-export default function Home({
+export default async function Home({
   searchParams,
 }: {
   searchParams: Promise<{ signedIn?: string }>;
 }) {
-  return (
-    <Suspense fallback={<LoginScreen />}>
-      <HomeContent searchParams={searchParams} />
-    </Suspense>
-  );
+  return <HomeContent searchParams={searchParams} />;
 }
