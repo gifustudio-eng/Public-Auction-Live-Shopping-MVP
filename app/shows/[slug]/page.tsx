@@ -45,16 +45,17 @@ type Show = {
 async function getViewer() {
   const supabase = await createClient();
   const { data } = await supabase.auth.getClaims();
-  if (!data?.claims) return {};
+  if (!data?.claims) return { id: null };
 
   const email = (data.claims.email as string | undefined) ?? "";
   const { data: profile } = await supabase
     .from("users")
-    .select("email, full_name, shipping_address")
+    .select("id, email, full_name, shipping_address")
     .eq("email", email)
     .maybeSingle();
 
   return {
+    id: profile?.id ?? null,
     email: profile?.email ?? email,
     name: profile?.full_name ?? undefined,
     shippingAddress: profile?.shipping_address ?? undefined,
@@ -84,7 +85,7 @@ function getPlaybackUrl(value: string | null) {
   }
 }
 
-function ActiveLots() {
+function ActiveLots({userId}: {userId: string | null}) {
   return (
     <aside className="rounded-3xl border border-black/10 bg-white p-5 lg:sticky lg:top-6 lg:self-start">
       <div className="flex items-center justify-between border-b border-black/10 pb-4">
@@ -102,34 +103,37 @@ function ActiveLots() {
       </div>
 
       <div className="mt-4 space-y-3">
-        {activeLots.map((lot, index) => (
-          <article
-            key={lot.number}
-            className={`rounded-2xl border p-4 ${index === 0 ? "border-[#f15a29]/35 bg-[#f15a29]/[0.06]" : "border-black/10"}`}
-          >
-            <div className="flex items-center justify-between gap-3 text-xs font-semibold uppercase tracking-[0.12em]">
-              <span className="text-black/40">{lot.number}</span>
-              <span className={index === 0 ? "text-[#d94719]" : "text-black/35"}>
-                {lot.status}
-              </span>
-            </div>
-            <h3 className="mt-3 font-semibold leading-5">{lot.title}</h3>
-            <p className="mt-1 text-sm leading-5 text-black/45">{lot.detail}</p>
-            <div className="mt-4 flex items-end justify-between gap-4">
+        {activeLots.map((lot) => (
+          <div key={lot.number} className="flex flex-col gap-3 p-4 border border-black/5 rounded-2xl bg-gray-50/50">
+            <div className="flex justify-between items-start">
               <div>
-                <p className="text-xs text-black/40">Current price</p>
-                <p className="mt-0.5 text-lg font-semibold">{lot.price}</p>
+                <span className="text-xs font-semibold text-gray-400">{lot.number}</span>
+                <h3 className="font-bold text-gray-900 leading-tight mt-0.5">{lot.title}</h3>
+                <p className="text-xs text-gray-500 mt-0.5">{lot.detail}</p>
               </div>
-              {index === 0 && (
+              <span className="text-sm font-bold text-[#d94719] whitespace-nowrap">{lot.price}</span>
+            </div>
+
+            {/* INTEGRASI TOMBOL BELI: HANYA UNTUK LOT ACTIVE "Open now" */}
+            <div className="mt-1">
+              {lot.status === "Open now" ? (
+                <BuyButton
+                  lotId="c7b2031a-e555-4421-9962-d67b2d55986d" // Lot ID dummy/asli dari database untuk pengujian
+                  initialStatus="live"                         // Set 'live' agar tombol menyala hijau "⚡️ BELI SEKARANG"
+                  opensAt={null}                               // Set null agar langsung terbuka tanpa countdown timer
+                  priceIdr={1850000}                           // Konversi simulasi $1,850 ke Rupiah (Rp 1.850.000) untuk integrasi DB
+                  currentUserId={userId}                       // Mengirimkan ID user dari Server Component ke Client Component tombol
+                />
+              ) : (
                 <button
-                  type="button"
-                  className="h-10 rounded-xl bg-[#f15a29] px-4 text-sm font-semibold text-white transition-colors hover:bg-[#d94719]"
+                  disabled
+                  className="w-full py-3 px-4 bg-gray-100 text-gray-400 font-bold rounded-xl text-xs cursor-not-allowed select-none border border-gray-200/50"
                 >
-                  Claim lot
+                  {lot.status === "Coming soon" ? "⏳ COMING SOON" : "⏳ UP NEXT"}
                 </button>
               )}
             </div>
-          </article>
+          </div>
         ))}
       </div>
     </aside>
@@ -198,7 +202,7 @@ export default async function LiveShowPage({
             )}
           </div>
 
-          <ActiveLots />
+          <ActiveLots userId= {viewer.id} />
         </div>
       </section>
     </main>
