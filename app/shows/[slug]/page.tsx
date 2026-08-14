@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import {
   ArrowLeft,
   Clock3,
+  ImageIcon,
   ShieldCheck,
   ShoppingBag,
 } from "lucide-react";
@@ -10,36 +11,30 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import BuyButton from "@/components/buy-button";
 
-const activeLots = [
-  {
-    number: "Lot 08",
-    title: "Danish Teak Lounge Chair",
-    detail: "Attributed to Arne Vodder, c. 1962",
-    price: "$1,850",
-    status: "Open now",
-  },
-  {
-    number: "Lot 09",
-    title: "Murano Sommerso Vase",
-    detail: "Italy, c. 1960",
-    price: "$420",
-    status: "Up next",
-  },
-  {
-    number: "Lot 10",
-    title: "Brass Tripod Floor Lamp",
-    detail: "France, c. 1955",
-    price: "$975",
-    status: "Coming soon",
-  },
-];
-
 type Show = {
   id: string;
   title: string;
   status: string;
   stream_playback_url: string | null;
   notes: string | null;
+};
+
+type LotStatus = "pending" | "live" | "held" | "sold" | "released";
+
+type Lot = {
+  id: string;
+  show_id: string;
+  consignor_id: string;
+  code: string;
+  title: string;
+  description: string | null;
+  photos: string[] | null;
+  price_idr: number;
+  seq: number;
+  status: LotStatus;
+  opens_at: string | null;
+  sold_at: string | null;
+  updated_at: string;
 };
 
 async function getViewer() {
@@ -74,6 +69,25 @@ async function getShow(id: string) {
   return data as Show;
 }
 
+async function getAvailableLots(showId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("lots")
+    .select(
+      "*",
+    )
+    .eq("show_id", showId)
+    .in("status", ["pending", "live", "released"])
+    .order("seq", { ascending: true });
+
+  if (error) {
+    console.error("Unable to load available lots:", error);
+    return { lots: [] as Lot[], error: true };
+  }
+
+  return { lots: (data ?? []) as Lot[], error: false };
+}
+
 function getPlaybackUrl(value: string | null) {
   if (!value) return null;
 
@@ -85,7 +99,35 @@ function getPlaybackUrl(value: string | null) {
   }
 }
 
-function ActiveLots({userId}: {userId: string | null}) {
+function getPhotoUrl(photos: string[] | null) {
+  const value = photos?.[0];
+  if (!value) return null;
+
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" || url.protocol === "http:"
+      ? url.toString()
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+function ActiveLots({
+  lots,
+  userId,
+  hasError,
+}: {
+  lots: Lot[];
+  userId: string | null;
+  hasError: boolean;
+}) {
+  const priceFormatter = new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    maximumFractionDigits: 0,
+  });
+
   return (
     <aside className="rounded-3xl border border-black/10 bg-white p-5 lg:sticky lg:top-6 lg:self-start">
       <div className="flex items-center justify-between border-b border-black/10 pb-4">
@@ -103,38 +145,52 @@ function ActiveLots({userId}: {userId: string | null}) {
       </div>
 
       <div className="mt-4 space-y-3">
-        {activeLots.map((lot) => (
-          <div key={lot.number} className="flex flex-col gap-3 p-4 border border-black/5 rounded-2xl bg-gray-50/50">
+        {hasError ? (
+          <div className="rounded-2xl border border-red-200 bg-red-50 p-5 text-sm text-red-700">
+            Available lots could not be loaded. Please try again shortly.
+          </div>
+        ) : lots.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-black/15 p-6 text-center text-sm text-black/45">
+            No available lots for this show.
+          </div>
+        ) : lots.map((lot) => {
+          const photoUrl = getPhotoUrl(lot.photos);
+
+          return (
+          <div key={lot.id} className="flex flex-col gap-3 p-4 border border-black/5 rounded-2xl bg-gray-50/50">
+            <div
+              className="flex aspect-[16/9] items-center justify-center overflow-hidden rounded-xl bg-black/[0.06] bg-cover bg-center text-black/25"
+              style={photoUrl ? { backgroundImage: `url(${JSON.stringify(photoUrl)})` } : undefined}
+              role={photoUrl ? "img" : undefined}
+              aria-label={photoUrl ? `${lot.title} lot photo` : undefined}
+            >
+              {!photoUrl && <ImageIcon className="size-7" aria-hidden="true" />}
+            </div>
             <div className="flex justify-between items-start">
               <div>
-                <span className="text-xs font-semibold text-gray-400">{lot.number}</span>
+                <span className="text-xs font-semibold text-gray-400">{lot.code}</span>
                 <h3 className="font-bold text-gray-900 leading-tight mt-0.5">{lot.title}</h3>
-                <p className="text-xs text-gray-500 mt-0.5">{lot.detail}</p>
+                {lot.description && (
+                  <p className="text-xs text-gray-500 mt-0.5">{lot.description}</p>
+                )}
               </div>
-              <span className="text-sm font-bold text-[#d94719] whitespace-nowrap">{lot.price}</span>
+              <span className="text-sm font-bold text-[#d94719] whitespace-nowrap">
+                {priceFormatter.format(Number(lot.price_idr))}
+              </span>
             </div>
 
-            {/* INTEGRASI TOMBOL BELI: HANYA UNTUK LOT ACTIVE "Open now" */}
             <div className="mt-1">
-              {lot.status === "Open now" ? (
-                <BuyButton
-                  lotId="c7b2031a-e555-4421-9962-d67b2d55986d" // Lot ID dummy/asli dari database untuk pengujian
-                  initialStatus="live"                         // Set 'live' agar tombol menyala hijau "⚡️ BELI SEKARANG"
-                  opensAt={null}                               // Set null agar langsung terbuka tanpa countdown timer
-                  priceIdr={1850000}                           // Konversi simulasi $1,850 ke Rupiah (Rp 1.850.000) untuk integrasi DB
-                  currentUserId={userId}                       // Mengirimkan ID user dari Server Component ke Client Component tombol
-                />
-              ) : (
-                <button
-                  disabled
-                  className="w-full py-3 px-4 bg-gray-100 text-gray-400 font-bold rounded-xl text-xs cursor-not-allowed select-none border border-gray-200/50"
-                >
-                  {lot.status === "Coming soon" ? "⏳ COMING SOON" : "⏳ UP NEXT"}
-                </button>
-              )}
+              <BuyButton
+                lotId={lot.id}
+                initialStatus={lot.status}
+                opensAt={lot.opens_at}
+                priceIdr={Number(lot.price_idr)}
+                currentUserId={userId}
+              />
             </div>
           </div>
-        ))}
+          );
+        })}
       </div>
     </aside>
   );
@@ -146,7 +202,11 @@ export default async function LiveShowPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const [viewer, show] = await Promise.all([getViewer(), getShow(slug)]);
+  const [viewer, show, availableLots] = await Promise.all([
+    getViewer(),
+    getShow(slug),
+    getAvailableLots(slug),
+  ]);
   const playbackUrl = getPlaybackUrl(show.stream_playback_url);
   const isLive = show.status.toLowerCase() === "live";
 
@@ -202,7 +262,11 @@ export default async function LiveShowPage({
             )}
           </div>
 
-          <ActiveLots userId= {viewer.id} />
+          <ActiveLots
+            lots={availableLots.lots}
+            userId={viewer.id}
+            hasError={availableLots.error}
+          />
         </div>
       </section>
     </main>
