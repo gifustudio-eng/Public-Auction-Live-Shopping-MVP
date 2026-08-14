@@ -27,7 +27,6 @@ export async function POST(request: Request) {
     );
     
     // 1. Verifikasi Sesi Autentikasi Pengguna sebelum live-show dimulai [3]
-    /*
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
       return NextResponse.json(
@@ -36,23 +35,7 @@ export async function POST(request: Request) {
       );
     }
 
-    */
-
-    const { data: { session } } = await supabase.auth.getSession();
-    let userId = session?.user?.id;
-
-// Logika bypass khusus untuk testing konkurensi di localhost
-    if (process.env.NODE_ENV === 'development' && request.headers.get('x-bypass-test') === 'true') {
-        userId = request.headers.get('x-user-id') || undefined;
-    }
-
-    if (!userId) {
-        return NextResponse.json(
-        { error: 'Unauthorized. Silakan login terlebih dahulu.' },
-        { status: 401 }
-        );
-    }
-
+    const userId = session.user.id;
     const body = await request.json();
     const { lot_id } = body;
 
@@ -62,8 +45,6 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
-
-    //const userId = session.user.id;
 
     // 2. Eksekusi Prosedur DB Atomik (Fungsi RPC claim_lot yang sudah Anda migrasikan) [3]
     const { data, error } = await supabase.rpc('claim_lot', {
@@ -100,7 +81,12 @@ export async function POST(request: Request) {
     await channel.send({
       type: 'broadcast',
       event: 'lot.claimed',
-      payload: { lot_id: lot_id },
+      payload: { 
+        lot_id: lot_id,
+        user_id: userId,             // 🌟 Tambahkan ini agar browser tahu siapa pemenangnya
+        hold_id: data.hold_id,       // 🌟 Tambahkan ini untuk disisipkan ke tombol checkout
+        checkout_url: data.checkout_url // 🌟 Tambahkan URL checkout Mayar tiruan
+      },
     });
     await supabase.removeChannel(channel);
 
