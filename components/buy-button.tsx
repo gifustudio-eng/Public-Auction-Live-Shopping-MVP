@@ -1,12 +1,35 @@
 "use client";
-import React, { useState, useEffect, useRef } from 'react';
-import { createClient } from '@supabase/supabase-js';
 
-// Pastikan konfigurasi inisialisasi Supabase Client sesuai dengan setup proyek Anda
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+import React, { useState, useEffect, useRef } from 'react';
+import { createBrowserClient } from '@supabase/ssr';
+
+// Helper Singleton untuk menjamin hanya ada SATU instance Supabase Client yang di-render di browser
+// Ini menghilangkan peringatan "Multiple GoTrueClient instances detected" secara permanen
+const getSupabaseClient = () => {
+  if (typeof window === 'undefined') {
+    // Sisi Server (SSR): Buat instance baru untuk keamanan data antar request
+    return createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+  }
+
+  // Sisi Client (Browser): Simpan di global scope agar tidak terduplikasi saat re-render atau Hot-Reload
+  const globalWithSupabase = globalThis as typeof globalThis & {
+    supabaseClientInstance?: ReturnType<typeof createBrowserClient>;
+  };
+
+  if (!globalWithSupabase.supabaseClientInstance) {
+    globalWithSupabase.supabaseClientInstance = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+  }
+
+  return globalWithSupabase.supabaseClientInstance;
+};
+
+const supabase = getSupabaseClient();
 
 interface BuyButtonProps {
   lotId: string;
