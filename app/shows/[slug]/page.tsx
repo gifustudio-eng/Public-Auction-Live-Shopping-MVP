@@ -3,13 +3,13 @@ import { createClient } from "@/lib/supabase/server";
 import {
   ArrowLeft,
   Clock3,
-  ImageIcon,
+  PackageCheck,
   ShieldCheck,
   ShoppingBag,
 } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import BuyButton from "@/components/buy-button";
+import { LotCard } from "@/components/lot-card";
 
 type Show = {
   id: string;
@@ -77,7 +77,7 @@ async function getAvailableLots(showId: string) {
       "*",
     )
     .eq("show_id", showId)
-    .in("status", ["pending", "live", "released"])
+    .in("status", ["pending", "live", "released", "sold"])
     .order("seq", { ascending: true });
 
   if (error) {
@@ -99,20 +99,6 @@ function getPlaybackUrl(value: string | null) {
   }
 }
 
-function getPhotoUrl(photos: string[] | null) {
-  const value = photos?.[0];
-  if (!value) return null;
-
-  try {
-    const url = new URL(value);
-    return url.protocol === "https:" || url.protocol === "http:"
-      ? url.toString()
-      : null;
-  } catch {
-    return null;
-  }
-}
-
 function ActiveLots({
   lots,
   userId,
@@ -122,12 +108,6 @@ function ActiveLots({
   userId: string | null;
   hasError: boolean;
 }) {
-  const priceFormatter = new Intl.NumberFormat("id-ID", {
-    style: "currency",
-    currency: "IDR",
-    maximumFractionDigits: 0,
-  });
-
   return (
     <aside className="rounded-3xl border border-black/10 bg-white p-5 lg:sticky lg:top-6 lg:self-start">
       <div className="flex items-center justify-between border-b border-black/10 pb-4">
@@ -153,44 +133,9 @@ function ActiveLots({
           <div className="rounded-2xl border border-dashed border-black/15 p-6 text-center text-sm text-black/45">
             No available lots for this show.
           </div>
-        ) : lots.map((lot) => {
-          const photoUrl = getPhotoUrl(lot.photos);
-
-          return (
-          <div key={lot.id} className="flex flex-col gap-3 p-4 border border-black/5 rounded-2xl bg-gray-50/50">
-            <div
-              className="flex aspect-[16/9] items-center justify-center overflow-hidden rounded-xl bg-black/[0.06] bg-cover bg-center text-black/25"
-              style={photoUrl ? { backgroundImage: `url(${JSON.stringify(photoUrl)})` } : undefined}
-              role={photoUrl ? "img" : undefined}
-              aria-label={photoUrl ? `${lot.title} lot photo` : undefined}
-            >
-              {!photoUrl && <ImageIcon className="size-7" aria-hidden="true" />}
-            </div>
-            <div className="flex justify-between items-start">
-              <div>
-                <span className="text-xs font-semibold text-gray-400">{lot.code}</span>
-                <h3 className="font-bold text-gray-900 leading-tight mt-0.5">{lot.title}</h3>
-                {lot.description && (
-                  <p className="text-xs text-gray-500 mt-0.5">{lot.description}</p>
-                )}
-              </div>
-              <span className="text-sm font-bold text-[#d94719] whitespace-nowrap">
-                {priceFormatter.format(Number(lot.price_idr))}
-              </span>
-            </div>
-
-            <div className="mt-1">
-              <BuyButton
-                lotId={lot.id}
-                initialStatus={lot.status}
-                opensAt={lot.opens_at}
-                priceIdr={Number(lot.price_idr)}
-                currentUserId={userId}
-              />
-            </div>
-          </div>
-          );
-        })}
+        ) : lots.map((lot) => (
+          <LotCard key={lot.id} lot={lot} userId={userId} />
+        ))}
       </div>
     </aside>
   );
@@ -215,12 +160,20 @@ export default async function LiveShowPage({
       <AuctionHeader {...viewer} />
 
       <section className="mx-auto max-w-7xl px-6 pb-20 pt-8 lg:px-10 lg:pb-24 lg:pt-10">
-        <Link
-          href="/shows"
-          className="inline-flex items-center gap-2 text-sm font-semibold text-black/55 transition-colors hover:text-black"
-        >
-          <ArrowLeft className="size-4" /> Back to shows
-        </Link>
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <Link
+            href="/shows"
+            className="inline-flex items-center gap-2 text-sm font-semibold text-black/55 transition-colors hover:text-black"
+          >
+            <ArrowLeft className="size-4" /> Back to shows
+          </Link>
+          <Link
+            href={`/shows/${show.id}/sold`}
+            className="inline-flex h-11 items-center gap-2 rounded-xl border border-black/10 bg-white px-4 text-sm font-semibold text-black/65 transition-colors hover:border-black/20 hover:text-black"
+          >
+            <PackageCheck className="size-4" /> Sold lots
+          </Link>
+        </div>
 
         <div className="mt-7 grid gap-7 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start">
           <div className="min-w-0">

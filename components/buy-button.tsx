@@ -51,7 +51,7 @@ export default function BuyButton({
   const [timeLeft, setTimeLeft] = useState<number>(0);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [holdId, setHoldId] = useState<string | null>(null);
+  const [, setHoldId] = useState<string | null>(null);
   const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
   const [isMyHold, setIsMyHold] = useState(false);
 
@@ -191,8 +191,8 @@ export default function BuyButton({
       setHoldId(data.hold_id);
       setCheckoutUrl(data.checkout_url);
 
-    } catch (err: any) {
-      setErrorMessage(err.message || 'Terjadi kesalahan sistem.');
+    } catch (err: unknown) {
+      setErrorMessage(err instanceof Error ? err.message : 'Terjadi kesalahan sistem.');
     } finally {
       setLoading(false);
     }
