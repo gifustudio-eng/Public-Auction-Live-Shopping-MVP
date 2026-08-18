@@ -1,4 +1,3 @@
-import { AuctionHeader } from "@/components/auction-header";
 import { createClient } from "@/lib/supabase/server";
 import {
   Archive,
@@ -46,31 +45,12 @@ const timeFormatter = new Intl.DateTimeFormat("en-US", {
   timeZoneName: "short",
 });
 
-async function getViewer() {
-  const supabase = await createClient();
-  const { data } = await supabase.auth.getClaims();
-  if (!data?.claims) return {};
-
-  const email = (data.claims.email as string | undefined) ?? "";
-  const { data: profile } = await supabase
-    .from("users")
-    .select("email, full_name, shipping_address")
-    .eq("email", email)
-    .maybeSingle();
-
-  return {
-    email: profile?.email ?? email,
-    name: profile?.full_name ?? undefined,
-    shippingAddress: profile?.shipping_address ?? undefined,
-  };
-}
-
 async function ShowsList() {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("shows")
     .select(
-      "id, title, scheduled_at, status, stream_playback_url, notes, created_at, updated_at",
+      "id, title, scheduled_at, status, notes, created_at",
     )
     .order("scheduled_at", { ascending: true });
 
@@ -160,12 +140,10 @@ async function ShowsList() {
 }
 
 export default async function ShowsPage() {
-  const [viewer, showsList] = await Promise.all([getViewer(), ShowsList()]);
+  const showsList = await ShowsList();
 
   return (
     <main className="min-h-svh bg-[#f7f4ed] text-[#171712]">
-      <AuctionHeader {...viewer} />
-
       <section className="mx-auto max-w-7xl px-6 pb-20 pt-14 lg:px-10 lg:pb-28 lg:pt-20">
         <div className="mb-8 flex justify-end">
           <Link

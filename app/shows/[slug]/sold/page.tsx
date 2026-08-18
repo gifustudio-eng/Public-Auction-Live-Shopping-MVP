@@ -1,4 +1,3 @@
-import { AuctionHeader } from "@/components/auction-header";
 import { createClient } from "@/lib/supabase/server";
 import { ArrowLeft, CalendarCheck, ImageIcon, PackageCheck } from "lucide-react";
 import Link from "next/link";
@@ -24,25 +23,6 @@ type SoldLot = {
   sold_at: string | null;
   updated_at: string;
 };
-
-async function getViewer() {
-  const supabase = await createClient();
-  const { data } = await supabase.auth.getClaims();
-  if (!data?.claims) return {};
-
-  const email = (data.claims.email as string | undefined) ?? "";
-  const { data: profile } = await supabase
-    .from("users")
-    .select("email, full_name, shipping_address")
-    .eq("email", email)
-    .maybeSingle();
-
-  return {
-    email: profile?.email ?? email,
-    name: profile?.full_name ?? undefined,
-    shippingAddress: profile?.shipping_address ?? undefined,
-  };
-}
 
 async function getShow(showId: string) {
   const supabase = await createClient();
@@ -105,16 +85,13 @@ export default async function SoldLotsPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug: showId } = await params;
-  const [viewer, show, soldLots] = await Promise.all([
-    getViewer(),
+  const [show, soldLots] = await Promise.all([
     getShow(showId),
     getSoldLots(showId),
   ]);
 
   return (
     <main className="min-h-svh bg-[#f7f4ed] text-[#171712]">
-      <AuctionHeader {...viewer} />
-
       <section className="mx-auto max-w-7xl px-6 pb-20 pt-8 lg:px-10 lg:pb-28 lg:pt-10">
         <Link
           href={`/shows/${show.id}`}

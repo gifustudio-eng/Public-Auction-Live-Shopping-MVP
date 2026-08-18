@@ -1,4 +1,3 @@
-import { AuctionHeader } from "@/components/auction-header";
 import { createClient } from "@/lib/supabase/server";
 import {
   ArrowLeft,
@@ -23,38 +22,19 @@ type LotStatus = "pending" | "live" | "held" | "sold" | "released";
 
 type Lot = {
   id: string;
-  show_id: string;
-  consignor_id: string;
   code: string;
   title: string;
   description: string | null;
   photos: string[] | null;
   price_idr: number;
-  seq: number;
   status: LotStatus;
   opens_at: string | null;
-  sold_at: string | null;
-  updated_at: string;
 };
 
-async function getViewer() {
+async function getViewerId() {
   const supabase = await createClient();
   const { data } = await supabase.auth.getClaims();
-  if (!data?.claims) return { id: null };
-
-  const email = (data.claims.email as string | undefined) ?? "";
-  const { data: profile } = await supabase
-    .from("users")
-    .select("id, email, full_name, shipping_address")
-    .eq("email", email)
-    .maybeSingle();
-
-  return {
-    id: profile?.id ?? null,
-    email: profile?.email ?? email,
-    name: profile?.full_name ?? undefined,
-    shippingAddress: profile?.shipping_address ?? undefined,
-  };
+  return data?.claims?.sub ?? null;
 }
 
 async function getShow(id: string) {
@@ -74,7 +54,7 @@ async function getAvailableLots(showId: string) {
   const { data, error } = await supabase
     .from("lots")
     .select(
-      "*",
+      "id, code, title, description, photos, price_idr, status, opens_at",
     )
     .eq("show_id", showId)
     .in("status", ["pending", "live", "released", "sold"])
@@ -147,8 +127,8 @@ export default async function LiveShowPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const [viewer, show, availableLots] = await Promise.all([
-    getViewer(),
+  const [viewerId, show, availableLots] = await Promise.all([
+    getViewerId(),
     getShow(slug),
     getAvailableLots(slug),
   ]);
@@ -157,8 +137,6 @@ export default async function LiveShowPage({
 
   return (
     <main className="min-h-svh bg-[#f7f4ed] text-[#171712]">
-      <AuctionHeader {...viewer} />
-
       <section className="mx-auto max-w-7xl px-6 pb-20 pt-8 lg:px-10 lg:pb-24 lg:pt-10">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <Link
@@ -217,7 +195,7 @@ export default async function LiveShowPage({
 
           <ActiveLots
             lots={availableLots.lots}
-            userId={viewer.id}
+            userId={viewerId}
             hasError={availableLots.error}
           />
         </div>
