@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 export function LoginForm({
   className,
@@ -19,25 +19,38 @@ export function LoginForm({
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const loginInFlight = useRef(false);
   const router = useRouter();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loginInFlight.current) return;
+
+    loginInFlight.current = true;
     const supabase = createClient();
     setIsLoading(true);
     setError(null);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
       if (error) throw error;
-      // Update this route to redirect to an authenticated route. The user already has an active session.
-      router.replace("/?signedIn=true");
+
+      const { data: profile } = await supabase
+        .from("users")
+        .select("role")
+        .eq("id", data.user.id)
+        .maybeSingle();
+
+      router.replace(
+        profile?.role === "admin" ? "/admin" : "/?signedIn=true",
+      );
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "An error occurred");
     } finally {
+      loginInFlight.current = false;
       setIsLoading(false);
     }
   };
