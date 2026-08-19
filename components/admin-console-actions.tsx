@@ -7,7 +7,7 @@ export function AdminConsoleActions() {
     <div className="mt-10 grid gap-5 sm:grid-cols-2">
       <ActionCard
         description="Create, Read, Update, and Delete Show"
-        href="/admin/shows/new"
+        href="/admin/shows"
         icon={<CalendarPlus className="size-6" aria-hidden="true" />}
         title="Show CRUD"
       />

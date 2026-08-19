@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-export default async function LotsAdminPage() {
+export default async function ShowsAdminPage() {
   const supabase = await createClient();
   const { data } = await supabase.auth.getClaims();
 
@@ -31,15 +31,15 @@ export default async function LotsAdminPage() {
           ← Back to admin console
         </Link>
         <p className="mt-8 text-sm font-semibold uppercase tracking-[0.18em] text-[#d94719]">
-          Lot CRUD
+          Show CRUD
         </p>
         <h1 className="mt-3 text-3xl font-semibold tracking-[-0.035em] sm:text-5xl">
-          Manage lots
+          Manage shows
         </h1>
         <p className="mt-4 max-w-2xl leading-7 text-black/55">
-          Choose an action to manage auction lots.
+          Choose an action to manage auction shows.
         </p>
-        <CrudActionCards basePath="/admin/lots" resource="lot" />
+        <CrudActionCards basePath="/admin/shows" resource="show" />
       </section>
     </main>
   );
