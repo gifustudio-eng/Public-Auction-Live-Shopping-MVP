@@ -1,9 +1,9 @@
 import { AuctionHeader } from "@/components/auction-header";
-import { AdminConsoleActions } from "@/components/admin-console-actions";
 import { createClient } from "@/lib/supabase/server";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
-export default async function AdminPage() {
+export default async function LotsAdminPage() {
   const supabase = await createClient();
   const { data } = await supabase.auth.getClaims();
 
@@ -18,9 +18,6 @@ export default async function AdminPage() {
 
   if (profile?.role !== "admin") redirect("/?signedIn=true");
 
-  const adminName =
-    profile.full_name?.trim() || profile.email || email || "Admin";
-
   return (
     <main className="min-h-svh bg-[#f7f4ed] text-[#171712]">
       <AuctionHeader
@@ -29,17 +26,15 @@ export default async function AdminPage() {
         shippingAddress={profile.shipping_address ?? undefined}
       />
       <section className="mx-auto w-full max-w-7xl px-6 py-12 lg:px-10 lg:py-16">
-        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#d94719]">
-          Admin console
+        <Link href="/admin" className="text-sm font-semibold text-[#d94719] hover:underline">
+          ← Back to admin console
+        </Link>
+        <p className="mt-8 text-sm font-semibold uppercase tracking-[0.18em] text-[#d94719]">
+          Lot CRUD
         </p>
         <h1 className="mt-3 text-3xl font-semibold tracking-[-0.035em] sm:text-5xl">
-          Hello Admin {adminName}
+          Manage lots
         </h1>
-        <p className="mt-4 max-w-2xl text-base leading-7 text-black/55">
-          Create a show or select an available show before adding its next lot.
-        </p>
-
-        <AdminConsoleActions />
       </section>
     </main>
   );
