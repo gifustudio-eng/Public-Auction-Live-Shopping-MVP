@@ -2,6 +2,7 @@ import { AuctionHeader } from "@/components/auction-header";
 import { AdminAddLotPanel } from "@/components/admin-add-lot-panel";
 import { LiveLots } from "@/components/live-lots";
 import { ShowAudienceCount } from "@/components/show-audience-count";
+import { StreamEmergencyControls } from "@/components/stream-emergency-controls";
 import { createClient } from "@/lib/supabase/server";
 import { ArrowLeft, Clock3 } from "lucide-react";
 import Link from "next/link";
@@ -95,7 +96,7 @@ export default async function AdminShowDetailPage({
         <div className="mt-7 grid gap-7 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start">
           <div className="min-w-0">
             <div className="relative aspect-video overflow-hidden rounded-3xl bg-[#191914] shadow-sm">
-              {playbackUrl ? (
+              {isLive && playbackUrl ? (
                 <iframe
                   src={playbackUrl}
                   title={`${show.title} video player`}
@@ -105,7 +106,7 @@ export default async function AdminShowDetailPage({
                 />
               ) : (
                 <div className="flex h-full items-center justify-center px-6 text-center text-sm text-white/60">
-                  A playback URL has not been added for this show yet.
+                  {isLive ? "A playback URL has not been added for this show yet." : "This stream is currently stopped."}
                 </div>
               )}
             </div>
@@ -126,6 +127,7 @@ export default async function AdminShowDetailPage({
               </div>
             </div>
             {show.notes && <p className="mt-6 max-w-3xl leading-7 text-black/55">{show.notes}</p>}
+            <StreamEmergencyControls showId={show.id} />
           </div>
 
           <AdminAddLotPanel

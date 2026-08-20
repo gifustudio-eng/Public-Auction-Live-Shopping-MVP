@@ -264,3 +264,88 @@ export async function deleteLot(
   revalidatePath(`/shows/${showId}`);
   return {};
 }
+
+export async function setShowStreamStatus(
+  showId: string,
+  status: "live" | "ended",
+): Promise<{ error?: string }> {
+  const supabase = await createClient();
+  const { data: authData } = await supabase.auth.getClaims();
+  if (!authData?.claims?.sub) return { error: "Your session has expired. Please sign in again." };
+
+  const { data: profile } = await supabase
+    .from("users")
+    .select("role")
+    .eq("id", authData.claims.sub)
+    .maybeSingle();
+  if (profile?.role !== "admin") return { error: "You do not have permission to control this stream." };
+
+  const { data: show } = await supabase
+    .from("shows")
+    .select("stream_playback_url")
+    .eq("id", showId)
+    .maybeSingle();
+  const playbackId = getMuxPlaybackId(show?.stream_playback_url);
+  if (!playbackId) return { error: "This show does not have a valid Mux playback URL or playback ID." };
+
+  const muxTokenId = process.env.MUX_TOKEN_ID;
+  const muxTokenSecret = process.env.MUX_TOKEN_SECRET;
+  if (!muxTokenId || !muxTokenSecret) {
+    return { error: "Mux server credentials are not configured for this deployment." };
+  }
+
+  const authorization = `Basic ${Buffer.from(`${muxTokenId}:${muxTokenSecret}`).toString("base64")}`;
+  const playbackResponse = await fetch(
+    `https://api.mux.com/video/v1/playback-ids/${encodeURIComponent(playbackId)}`,
+    { headers: { Authorization: authorization } },
+  );
+  if (!playbackResponse.ok) {
+    return { error: "Mux could not find this playback ID. Check the show playback URL." };
+  }
+
+  const playback = (await playbackResponse.json()) as {
+    data?: { object?: { type?: string; id?: string } };
+  };
+  const liveStreamId = playback.data?.object?.type === "live_stream"
+    ? playback.data.object.id
+    : undefined;
+  if (!liveStreamId) {
+    return { error: "This Mux playback ID belongs to an on-demand asset, not a live stream." };
+  }
+
+  const muxAction = status === "ended" ? "disable" : "enable";
+  const muxResponse = await fetch(
+    `https://api.mux.com/video/v1/live-streams/${encodeURIComponent(liveStreamId)}/${muxAction}`,
+    { method: "PUT", headers: { Authorization: authorization, Accept: "application/json" } },
+  );
+  if (!muxResponse.ok) {
+    return { error: `Mux could not ${muxAction} this live stream. Please try again.` };
+  }
+
+  const { error } = await supabase
+    .from("shows")
+    .update({ status, updated_at: new Date().toISOString() })
+    .eq("id", showId);
+  if (error) {
+    console.error("Unable to update stream status:", error);
+    return { error: "The stream status could not be updated. Please try again." };
+  }
+
+  revalidatePath(`/admin/shows/${showId}`);
+  revalidatePath(`/shows/${showId}`);
+  revalidatePath("/shows");
+  return {};
+}
+
+function getMuxPlaybackId(value: string | null | undefined) {
+  if (!value) return null;
+
+  try {
+    const url = new URL(value);
+    if (url.hostname !== "player.mux.com" && url.hostname !== "stream.mux.com") return null;
+    const playbackId = url.pathname.split("/").filter(Boolean)[0] ?? "";
+    return playbackId.replace(/\.m3u8$/, "") || null;
+  } catch {
+    return value.trim() || null;
+  }
+}
