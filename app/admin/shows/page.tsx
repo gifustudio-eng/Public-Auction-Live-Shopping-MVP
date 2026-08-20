@@ -28,13 +28,13 @@ export default async function ShowsAdminPage() {
       />
       <section className="mx-auto w-full max-w-7xl px-6 py-12 lg:px-10 lg:py-16">
         <Link href="/admin" className="text-sm font-semibold text-[#d94719] hover:underline">
-          ← Back to admin console
+          ← Back to Admin Console
         </Link>
         <p className="mt-8 text-sm font-semibold uppercase tracking-[0.18em] text-[#d94719]">
-          Show CRUD
+          Shows and Lots Management Menu
         </p>
         <h1 className="mt-3 text-3xl font-semibold tracking-[-0.035em] sm:text-5xl">
-          Manage shows
+          Manage Shows and Lots
         </h1>
         <p className="mt-4 max-w-2xl leading-7 text-black/55">
           Choose an action to manage auction shows.

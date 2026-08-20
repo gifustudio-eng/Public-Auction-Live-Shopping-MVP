@@ -31,10 +31,10 @@ export default async function NewShowPage() {
           ← Back to Menu
         </Link>
         <p className="mt-8 text-sm font-semibold uppercase tracking-[0.18em] text-[#d94719]">
-          Show CRUD
+          Manage Shows and Lots · Create
         </p>
         <h1 className="mt-3 text-3xl font-semibold tracking-[-0.035em] sm:text-5xl">
-          Create a new show
+          Create a New Show
         </h1>
         <p className="mt-4 max-w-2xl leading-7 text-black/55">
           New shows are created as drafts. The database generates the show ID automatically.

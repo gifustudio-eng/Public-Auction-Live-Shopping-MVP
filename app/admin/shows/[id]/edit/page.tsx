@@ -69,7 +69,7 @@ export default async function EditShowPage({
           ← Back to show management
         </Link>
         <p className="mt-8 text-sm font-semibold uppercase tracking-[0.18em] text-[#d94719]">
-          Show CRUD · Edit
+          Manage Shows and Lots · Edit
         </p>
         <h1 className="mt-3 text-3xl font-semibold tracking-[-0.035em] sm:text-5xl">
           Edit show
