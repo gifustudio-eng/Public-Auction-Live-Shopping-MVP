@@ -34,19 +34,23 @@ export function AdminShowList({
 
   return (
     <div className="mt-10 grid gap-4">
-      {shows.map((show) => (
-        <article
-          key={show.id}
-          className="flex items-center justify-between gap-5 rounded-3xl border border-black/10 bg-white p-6"
-        >
-          <div>
+      {shows.map((show) => {
+        const details = (
+          <>
             <h2 className="text-xl font-semibold">{show.title}</h2>
             <p className="mt-2 text-sm text-black/55">
               {dateFormatter.format(new Date(show.scheduled_at))} · {" "}
               <span className="capitalize">{show.status.replaceAll("_", " ")}</span>
             </p>
-          </div>
-          {editable && (
+          </>
+        );
+
+        return editable ? (
+          <article
+            key={show.id}
+            className="flex items-center justify-between gap-5 rounded-3xl border border-black/10 bg-white p-6"
+          >
+            <div>{details}</div>
             <div className="flex shrink-0 items-center gap-2">
               <Link
                 href={`/admin/shows/${show.id}/edit`}
@@ -57,9 +61,17 @@ export function AdminShowList({
               </Link>
               <DeleteShowButton id={show.id} title={show.title} />
             </div>
-          )}
-        </article>
-      ))}
+          </article>
+        ) : (
+          <Link
+            key={show.id}
+            href={`/admin/shows/${show.id}`}
+            className="block rounded-3xl border border-black/10 bg-white p-6 transition hover:-translate-y-0.5 hover:border-[#f15a29] hover:shadow-md"
+          >
+            {details}
+          </Link>
+        );
+      })}
     </div>
   );
 }

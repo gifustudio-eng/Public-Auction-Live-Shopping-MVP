@@ -27,8 +27,8 @@ export default async function NewShowPage() {
         shippingAddress={profile.shipping_address ?? undefined}
       />
       <section className="mx-auto w-full max-w-7xl px-6 py-12 lg:px-10 lg:py-16">
-        <Link href="/admin" className="text-sm font-semibold text-[#d94719] hover:underline">
-          ← Back to admin console
+        <Link href="/admin/shows" className="text-sm font-semibold text-[#d94719] hover:underline">
+          ← Back to Menu
         </Link>
         <p className="mt-8 text-sm font-semibold uppercase tracking-[0.18em] text-[#d94719]">
           Show CRUD
