@@ -1,7 +1,6 @@
 import { AuctionHeader } from "@/components/auction-header";
 import { AdminAddLotPanel } from "@/components/admin-add-lot-panel";
-import { DeleteLotButton } from "@/components/delete-lot-button";
-import { LotCard } from "@/components/lot-card";
+import { LiveLots } from "@/components/live-lots";
 import { ShowAudienceCount } from "@/components/show-audience-count";
 import { createClient } from "@/lib/supabase/server";
 import { ArrowLeft, Clock3 } from "lucide-react";
@@ -137,17 +136,13 @@ export default async function AdminShowDetailPage({
           >
               {lotsError ? (
                 <div className="rounded-2xl border border-red-200 bg-red-50 p-5 text-sm text-red-700">Lots could not be loaded. Please try again shortly.</div>
-              ) : showLots.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-black/15 p-6 text-center text-sm text-black/45">No available lots for this show.</div>
               ) : (
-                showLots.map((lot) => (
-                  <div key={lot.id} className="relative">
-                    <div className="absolute right-3 top-3 z-10">
-                      <DeleteLotButton lotId={lot.id} showId={show.id} title={lot.title} />
-                    </div>
-                    <LotCard lot={lot} userId={authData.claims.sub as string} />
-                  </div>
-                ))
+                <LiveLots
+                  admin
+                  initialLots={showLots}
+                  showId={show.id}
+                  userId={authData.claims.sub as string}
+                />
               )}
           </AdminAddLotPanel>
         </div>

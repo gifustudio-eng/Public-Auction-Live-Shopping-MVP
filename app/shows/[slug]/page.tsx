@@ -8,8 +8,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { LotCard } from "@/components/lot-card";
 import { ShowAudienceCount } from "@/components/show-audience-count";
+import { LiveLots } from "@/components/live-lots";
 
 type Show = {
   id: string;
@@ -91,10 +91,12 @@ function getPlaybackUrl(value: string | null) {
 
 function ActiveLots({
   lots,
+  showId,
   userId,
   hasError,
 }: {
   lots: Lot[];
+  showId: string;
   userId: string | null;
   hasError: boolean;
 }) {
@@ -119,13 +121,9 @@ function ActiveLots({
           <div className="rounded-2xl border border-red-200 bg-red-50 p-5 text-sm text-red-700">
             Available lots could not be loaded. Please try again shortly.
           </div>
-        ) : lots.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-black/15 p-6 text-center text-sm text-black/45">
-            No available lots for this show.
-          </div>
-        ) : lots.map((lot) => (
-          <LotCard key={lot.id} lot={lot} userId={userId} />
-        ))}
+        ) : (
+          <LiveLots initialLots={lots} showId={showId} userId={userId} />
+        )}
       </div>
     </aside>
   );
@@ -210,6 +208,7 @@ export default async function LiveShowPage({
 
           <ActiveLots
             lots={availableLots.lots}
+            showId={show.id}
             userId={viewer.id}
             hasError={availableLots.error}
           />
