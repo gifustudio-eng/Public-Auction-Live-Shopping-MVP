@@ -22,7 +22,7 @@ export default async function ReadShowsPage() {
       <section className="mx-auto w-full max-w-7xl px-6 py-12 lg:px-10 lg:py-16">
         <Link href="/admin/shows" className="text-sm font-semibold text-[#d94719] hover:underline">← Back to Menu</Link>
         <p className="mt-8 text-sm font-semibold uppercase tracking-[0.18em] text-[#d94719]">Manage Shows and Lots · Read</p>
-        <h1 className="mt-3 text-3xl font-semibold tracking-[-0.035em] sm:text-5xl">Available shows</h1>
+        <h1 className="mt-3 text-3xl font-semibold tracking-[-0.035em] sm:text-5xl">Available Shows</h1>
         {error ? <p className="mt-10 rounded-2xl bg-red-50 p-5 text-red-800">Shows could not be loaded. Please try again.</p> : <AdminShowList shows={(shows ?? []) as AdminShowListItem[]} />}
       </section>
     </main>

@@ -1,35 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
-import { createBrowserClient } from '@supabase/ssr';
 
-// Helper Singleton untuk menjamin hanya ada SATU instance Supabase Client yang di-render di browser
-// Ini menghilangkan peringatan "Multiple GoTrueClient instances detected" secara permanen
-const getSupabaseClient = () => {
-  if (typeof window === 'undefined') {
-    // Sisi Server (SSR): Buat instance baru untuk keamanan data antar request
-    return createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
-  }
-
-  // Sisi Client (Browser): Simpan di global scope agar tidak terduplikasi saat re-render atau Hot-Reload
-  const globalWithSupabase = globalThis as typeof globalThis & {
-    supabaseClientInstance?: ReturnType<typeof createBrowserClient>;
-  };
-
-  if (!globalWithSupabase.supabaseClientInstance) {
-    globalWithSupabase.supabaseClientInstance = createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
-  }
-
-  return globalWithSupabase.supabaseClientInstance;
-};
-
-const supabase = getSupabaseClient();
+import { createClient } from '@/lib/supabase/client';
 
 interface BuyButtonProps {
   lotId: string;
@@ -48,6 +21,8 @@ export default function BuyButton({
 }: BuyButtonProps) {
   // State utama untuk mengontrol status lot & tombol secara lokal
   const [status, setStatus] = useState(initialStatus);
+  const [liveOpensAt, setLiveOpensAt] = useState(opensAt);
+  const [livePriceIdr, setLivePriceIdr] = useState(priceIdr);
   const [timeLeft, setTimeLeft] = useState<number>(0);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -56,6 +31,12 @@ export default function BuyButton({
   const [isMyHold, setIsMyHold] = useState(false);
 
   const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    setStatus(initialStatus);
+    setLiveOpensAt(opensAt);
+    setLivePriceIdr(priceIdr);
+  }, [initialStatus, opensAt, priceIdr]);
 
   // Format Rupiah Helper
   const formatRupiah = (value: number) => {
@@ -70,10 +51,10 @@ export default function BuyButton({
   // LOGIKA 1: HITUNG MUNDUR (COUNTDOWN)
   // ==========================================
   useEffect(() => {
-    if (!opensAt || status === 'sold') return;
+    if (!liveOpensAt || status === 'sold') return;
 
     const calculateTimeLeft = () => {
-      const difference = +new Date(opensAt) - +new Date();
+      const difference = +new Date(liveOpensAt) - +new Date();
       return difference > 0 ? Math.ceil(difference / 1000) : 0;
     };
 
@@ -102,12 +83,13 @@ export default function BuyButton({
         clearInterval(countdownIntervalRef.current);
       }
     };
-  }, [opensAt, status]);
+  }, [liveOpensAt, status]);
 
   // ==========================================
   // LOGIKA 2: SUPABASE REALTIME SUBSCRIPTION
   // ==========================================
   useEffect(() => {
+    const supabase = createClient();
     // Berlangganan ke channel yang sama dengan broadcast API backend
     const channel = supabase.channel('auction_session');
 
@@ -150,6 +132,40 @@ export default function BuyButton({
       supabase.removeChannel(channel);
     };
   }, [lotId, currentUserId]);
+
+  // Keep this purchase control in sync with changes to only its own lot row.
+  useEffect(() => {
+    const supabase = createClient();
+    const channel = supabase
+      .channel(`buy-button-lot:${lotId}`)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'lots', filter: `id=eq.${lotId}` },
+        (payload) => {
+          const lot = payload.new as {
+            status?: BuyButtonProps['initialStatus'];
+            opens_at?: string | null;
+            price_idr?: number | string;
+          };
+
+          if (lot.status) {
+            setStatus(lot.status);
+            if (lot.status !== 'held') {
+              setIsMyHold(false);
+              setHoldId(null);
+              setCheckoutUrl(null);
+            }
+          }
+          if (Object.hasOwn(lot, 'opens_at')) setLiveOpensAt(lot.opens_at ?? null);
+          if (typeof lot.price_idr !== 'undefined') setLivePriceIdr(Number(lot.price_idr));
+        },
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [lotId]);
 
   // ==========================================
   // LOGIKA 3: EKSEKUSI KLAIM (API POST CALL)
@@ -208,7 +224,7 @@ export default function BuyButton({
       {/* Informasi Singkat Harga */}
       <div className="flex justify-between items-center mb-3 px-1">
         <span className="text-gray-500 text-sm font-medium">Harga Barang</span>
-        <span className="text-gray-900 text-lg font-bold">{formatRupiah(priceIdr)}</span>
+        <span className="text-gray-900 text-lg font-bold">{formatRupiah(livePriceIdr)}</span>
       </div>
 
       {/* RENDER TOMBOL 3-STATE */}

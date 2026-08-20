@@ -5,7 +5,7 @@ import { useActionState, useEffect, useRef, useState, type ReactNode } from "rea
 
 import { createLot, type CreateLotState } from "@/app/admin/actions";
 
-type Consignor = { id: string };
+type Consignor = { id: string; name: string };
 const initialState: CreateLotState = {};
 
 export function AdminAddLotPanel({
@@ -55,7 +55,7 @@ export function AdminAddLotPanel({
             <label className="grid gap-1.5 text-xs font-medium">Consignor
               <select required name="consignor_id" className="rounded-lg border border-black/15 bg-white px-3 py-2 text-sm">
                 <option value="">Select a consignor</option>
-                {consignors.map((consignor) => <option key={consignor.id} value={consignor.id}>Consignor {consignor.id.slice(0, 8)}</option>)}
+                {consignors.map((consignor) => <option key={consignor.id} value={consignor.id}>{consignor.name} - {consignor.id}</option>)}
               </select>
             </label>
             <label className="grid gap-1.5 text-xs font-medium">Code

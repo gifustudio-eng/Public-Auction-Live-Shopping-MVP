@@ -38,7 +38,7 @@ export function LiveLots({
   userId,
 }: {
   admin?: boolean;
-  consignors?: { id: string }[];
+  consignors?: { id: string; name: string }[];
   initialLots: LiveLot[];
   showId: string;
   userId: string | null;

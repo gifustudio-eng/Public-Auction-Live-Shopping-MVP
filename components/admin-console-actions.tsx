@@ -1,15 +1,21 @@
-import { CalendarPlus } from "lucide-react";
+import { CalendarPlus, UsersRound } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
 export function AdminConsoleActions() {
   return (
-    <div className="mx-auto mt-10 w-full max-w-lg">
+    <div className="mx-auto mt-10 grid w-full max-w-3xl gap-5 sm:grid-cols-2">
       <ActionCard
-        description="Create, Read, Update, and Delete Show"
+        description="Create, Read, and Edit Shows and Lots"
         href="/admin/shows"
         icon={<CalendarPlus className="size-6" aria-hidden="true" />}
         title="Manage Shows and Lots"
+      />
+      <ActionCard
+        description="Create, Read, and Edit Consignors"
+        href="/admin/consignors"
+        icon={<UsersRound className="size-6" aria-hidden="true" />}
+        title="Manage Consignors"
       />
     </div>
   );

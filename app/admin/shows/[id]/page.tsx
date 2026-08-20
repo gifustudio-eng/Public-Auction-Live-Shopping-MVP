@@ -68,7 +68,7 @@ export default async function AdminShowDetailPage({
         .eq("show_id", id)
         .in("status", ["pending", "live", "released", "sold"])
         .order("seq", { ascending: true }),
-      supabase.from("consignors").select("id").order("id", { ascending: true }),
+      supabase.from("consignors").select("id, name").order("name", { ascending: true }),
     ]);
 
   if (profile?.role !== "admin") redirect("/?signedIn=true");
@@ -91,7 +91,7 @@ export default async function AdminShowDetailPage({
           href="/admin/shows/read"
           className="inline-flex items-center gap-2 text-sm font-semibold text-black/55 transition-colors hover:text-black"
         >
-          <ArrowLeft className="size-4" /> Back to available shows
+          <ArrowLeft className="size-4" /> Back to Available Shows
         </Link>
 
         <div className="mt-7 grid gap-7 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start">

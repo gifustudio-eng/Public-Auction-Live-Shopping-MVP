@@ -13,7 +13,7 @@ export function CrudActionCards({
   resource,
 }: {
   basePath: string;
-  resource: "show" | "lot";
+  resource: "show" | "lot" | "consignor";
 }) {
   return (
     <div className="mt-10 grid gap-5 sm:grid-cols-2">
@@ -23,7 +23,9 @@ export function CrudActionCards({
             ? action.key === "create"
               ? "/admin/shows/new"
               : `${basePath}/${action.key}`
-            : `${basePath}?action=${action.key}`;
+            : resource === "consignor"
+              ? `${basePath}/${action.key}`
+              : `${basePath}?action=${action.key}`;
 
         return (
           <CrudCard

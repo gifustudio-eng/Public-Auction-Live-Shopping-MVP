@@ -32,7 +32,7 @@ export function EditLotForm({
   onClose,
   showId,
 }: {
-  consignors: { id: string }[];
+  consignors: { id: string; name: string }[];
   lot: LiveLot & { consignor_id?: string | null };
   onClose: () => void;
   showId: string;
@@ -53,7 +53,7 @@ export function EditLotForm({
         <label className="grid gap-1.5 text-xs font-medium">Consignor
           <select required name="consignor_id" defaultValue={lot.consignor_id ?? ""} className="rounded-lg border border-black/15 bg-white px-3 py-2 text-sm">
             <option value="">Select a consignor</option>
-            {consignors.map((consignor) => <option key={consignor.id} value={consignor.id}>Consignor {consignor.id.slice(0, 8)}</option>)}
+            {consignors.map((consignor) => <option key={consignor.id} value={consignor.id}>{consignor.name} - {consignor.id}</option>)}
           </select>
         </label>
         <label className="grid gap-1.5 text-xs font-medium">Code<input required name="code" maxLength={50} defaultValue={lot.code} className="rounded-lg border border-black/15 bg-white px-3 py-2 text-sm" /></label>

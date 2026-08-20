@@ -8,6 +8,135 @@ export type CreateShowState = {
   success?: string;
 };
 
+export type CreateConsignorState = {
+  error?: string;
+  success?: string;
+};
+
+export async function createConsignor(
+  _previousState: CreateConsignorState,
+  formData: FormData,
+): Promise<CreateConsignorState> {
+  const name = String(formData.get("name") ?? "").trim();
+  const contact = String(formData.get("contact") ?? "").trim();
+  const commissionPct = Number(formData.get("commission_pct") ?? 0);
+  const payoutNotes = String(formData.get("payout_notes") ?? "").trim();
+
+  if (!name || !contact) {
+    return { error: "Consignor name and contact details are required." };
+  }
+  if (!Number.isFinite(commissionPct) || commissionPct < 0 || commissionPct > 100) {
+    return { error: "Commission must be a percentage between 0 and 100." };
+  }
+
+  const supabase = await createClient();
+  const { data: authData } = await supabase.auth.getClaims();
+  if (!authData?.claims?.sub) {
+    return { error: "Your session has expired. Please sign in again." };
+  }
+
+  const { data: profile } = await supabase
+    .from("users")
+    .select("role")
+    .eq("id", authData.claims.sub)
+    .maybeSingle();
+  if (profile?.role !== "admin") {
+    return { error: "You do not have permission to create consignors." };
+  }
+
+  const { error } = await supabase.from("consignors").insert({
+    name,
+    contact,
+    commission_pct: commissionPct,
+    payout_notes: payoutNotes || null,
+  });
+  if (error) {
+    console.error("Unable to create consignor:", error);
+    return { error: "The consignor could not be created. Please try again." };
+  }
+
+  revalidatePath("/admin/consignors");
+  revalidatePath("/admin/consignors/read");
+  return { success: "Consignor created." };
+}
+
+export async function updateConsignor(
+  _previousState: CreateConsignorState,
+  formData: FormData,
+): Promise<CreateConsignorState> {
+  const id = String(formData.get("id") ?? "");
+  const name = String(formData.get("name") ?? "").trim();
+  const contact = String(formData.get("contact") ?? "").trim();
+  const commissionPct = Number(formData.get("commission_pct") ?? 0);
+  const payoutNotes = String(formData.get("payout_notes") ?? "").trim();
+
+  if (!id || !name || !contact) {
+    return { error: "Consignor name and contact details are required." };
+  }
+  if (!Number.isFinite(commissionPct) || commissionPct < 0 || commissionPct > 100) {
+    return { error: "Commission must be a percentage between 0 and 100." };
+  }
+
+  const supabase = await createClient();
+  const { data: authData } = await supabase.auth.getClaims();
+  if (!authData?.claims?.sub) {
+    return { error: "Your session has expired. Please sign in again." };
+  }
+
+  const { data: profile } = await supabase
+    .from("users")
+    .select("role")
+    .eq("id", authData.claims.sub)
+    .maybeSingle();
+  if (profile?.role !== "admin") {
+    return { error: "You do not have permission to edit consignors." };
+  }
+
+  const { error } = await supabase
+    .from("consignors")
+    .update({
+      name,
+      contact,
+      commission_pct: commissionPct,
+      payout_notes: payoutNotes || null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id);
+  if (error) {
+    console.error("Unable to update consignor:", error);
+    return { error: "The consignor could not be updated. Please try again." };
+  }
+
+  revalidatePath("/admin/consignors");
+  revalidatePath("/admin/consignors/read");
+  revalidatePath("/admin/consignors/edit");
+  return { success: "Consignor updated." };
+}
+
+export async function deleteConsignor(id: string): Promise<{ error?: string }> {
+  const supabase = await createClient();
+  const { data: authData } = await supabase.auth.getClaims();
+  if (!authData?.claims?.sub) return { error: "Your session has expired. Please sign in again." };
+
+  const { data: profile } = await supabase
+    .from("users")
+    .select("role")
+    .eq("id", authData.claims.sub)
+    .maybeSingle();
+  if (profile?.role !== "admin") return { error: "You do not have permission to delete consignors." };
+
+  const { error } = await supabase.from("consignors").delete().eq("id", id);
+  if (error) {
+    console.error("Unable to delete consignor:", error);
+    return { error: "The consignor could not be deleted. It may still be assigned to a lot." };
+  }
+
+  revalidatePath("/admin/consignors");
+  revalidatePath("/admin/consignors/read");
+  revalidatePath("/admin/consignors/edit");
+  return {};
+}
+
 export async function createShow(
   _previousState: CreateShowState,
   formData: FormData,
