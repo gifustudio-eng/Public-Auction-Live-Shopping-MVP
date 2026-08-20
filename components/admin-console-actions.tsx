@@ -1,21 +1,15 @@
-import { CalendarPlus, PackagePlus } from "lucide-react";
+import { CalendarPlus } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
 export function AdminConsoleActions() {
   return (
-    <div className="mt-10 grid gap-5 sm:grid-cols-2">
+    <div className="mx-auto mt-10 w-full max-w-lg">
       <ActionCard
         description="Create, Read, Update, and Delete Show"
         href="/admin/shows"
         icon={<CalendarPlus className="size-6" aria-hidden="true" />}
-        title="Show CRUD"
-      />
-      <ActionCard
-        description="Create, Read, Update, and Delete Lot"
-        href="/admin/lots"
-        icon={<PackagePlus className="size-6" aria-hidden="true" />}
-        title="Lot CRUD"
+        title="Manage Shows and Lots"
       />
     </div>
   );
@@ -35,7 +29,7 @@ function ActionCard({
   return (
     <Link
       href={href}
-      className="group rounded-3xl border border-black/10 bg-white p-7 text-left transition-all hover:-translate-y-1 hover:border-[#f15a29] hover:shadow-lg"
+      className="group block w-full rounded-3xl border border-black/10 bg-white p-7 text-left shadow-sm transition-all hover:-translate-y-1 hover:border-[#f15a29] hover:shadow-lg sm:p-8"
     >
       <span className="flex size-12 items-center justify-center rounded-2xl bg-[#f15a29] text-white">
         {icon}
