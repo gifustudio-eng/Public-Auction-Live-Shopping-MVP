@@ -2,7 +2,7 @@ require('dotenv').config();
 
 import Mux from '@mux/mux-node';
 
-const Mux = new Mux({
+const mux = new Mux({
     accessToken: process.env.MUX_TOKEN_ID,
     secret: process.env.MUX_TOKEN_SECRET,
 });
