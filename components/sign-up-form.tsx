@@ -44,7 +44,7 @@ export function SignUpForm({
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/shows`,
+          emailRedirectTo: `${window.location.origin}/auth/confirm?next=/auth/verification-success`,
         },
       });
       if (error) throw error;
@@ -58,16 +58,19 @@ export function SignUpForm({
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-2xl">Sign up</CardTitle>
-          <CardDescription>Create a new account</CardDescription>
+      <Card className="relative border-black/10 bg-white shadow-xl shadow-black/5">
+        <CardHeader className="pb-5">
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#d94719]">
+            Join the auction
+          </p>
+          <CardTitle className="pt-1 text-3xl tracking-[-0.03em] text-[#f15a29]">Create your account</CardTitle>
+          <CardDescription className="pt-1 text-black/55">Save your details and start discovering live auctions.</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSignUp}>
             <div className="flex flex-col gap-6">
-              <div className="grid gap-2">
-                <Label htmlFor="email">Email</Label>
+              <div className="grid gap-2.5">
+                <Label htmlFor="email" className="text-[#171712]">Email</Label>
                 <Input
                   id="email"
                   type="email"
@@ -75,11 +78,12 @@ export function SignUpForm({
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  className="h-11 rounded-xl border-black/15 bg-[#f7f4ed] text-[#171712] placeholder:text-black/45 focus-visible:border-[#f15a29] focus-visible:ring-[#f15a29]/25"
                 />
               </div>
-              <div className="grid gap-2">
+              <div className="grid gap-2.5">
                 <div className="flex items-center">
-                  <Label htmlFor="password">Password</Label>
+                  <Label htmlFor="password" className="text-[#171712]">Password</Label>
                 </div>
                 <Input
                   id="password"
@@ -87,11 +91,12 @@ export function SignUpForm({
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  className="h-11 rounded-xl border-black/15 bg-[#f7f4ed] text-[#171712] placeholder:text-black/45 focus-visible:border-[#f15a29] focus-visible:ring-[#f15a29]/25"
                 />
               </div>
-              <div className="grid gap-2">
+              <div className="grid gap-2.5">
                 <div className="flex items-center">
-                  <Label htmlFor="repeat-password">Repeat Password</Label>
+                  <Label htmlFor="repeat-password" className="text-[#171712]">Repeat Password</Label>
                 </div>
                 <Input
                   id="repeat-password"
@@ -99,16 +104,17 @@ export function SignUpForm({
                   required
                   value={repeatPassword}
                   onChange={(e) => setRepeatPassword(e.target.value)}
+                  className="h-11 rounded-xl border-black/15 bg-[#f7f4ed] text-[#171712] placeholder:text-black/45 focus-visible:border-[#f15a29] focus-visible:ring-[#f15a29]/25"
                 />
               </div>
-              {error && <p className="text-sm text-red-500">{error}</p>}
-              <Button type="submit" className="w-full" disabled={isLoading}>
+              {error && <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+              <Button type="submit" className="h-12 w-full rounded-xl bg-[#f15a29] text-base text-white shadow-none hover:bg-[#d94719]" disabled={isLoading}>
                 {isLoading ? "Creating an account..." : "Sign up"}
               </Button>
             </div>
-            <div className="mt-4 text-center text-sm">
+            <div className="mt-6 text-center text-sm text-black/55">
               Already have an account?{" "}
-              <Link href="/auth/login" className="underline underline-offset-4">
+              <Link href="/auth/login" className="font-semibold text-[#d94719] hover:underline">
                 Login
               </Link>
             </div>
