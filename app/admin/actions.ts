@@ -265,6 +265,82 @@ export async function deleteLot(
   return {};
 }
 
+export async function updateLot(
+  _previousState: CreateLotState,
+  formData: FormData,
+): Promise<CreateLotState> {
+  const lotId = String(formData.get("lot_id") ?? "");
+  const showId = String(formData.get("show_id") ?? "");
+  const consignorId = String(formData.get("consignor_id") ?? "");
+  const code = String(formData.get("code") ?? "").trim();
+  const title = String(formData.get("title") ?? "").trim();
+  const description = String(formData.get("description") ?? "").trim();
+  const price = Number(formData.get("price_idr"));
+  const lotStatus = String(formData.get("lot_status") ?? "");
+  const holdStatus = String(formData.get("hold_status") ?? "");
+  const opensAtValue = String(formData.get("opens_at") ?? "").trim();
+  const timezone = String(formData.get("timezone") ?? "Asia/Jakarta");
+  const photos = ["image_link_1", "image_link_2", "image_link_3"]
+    .map((field) => String(formData.get(field) ?? "").trim())
+    .filter(Boolean);
+
+  const lotStatuses = ["pending", "live", "held", "sold", "released"];
+  const holdStatuses = ["active", "converted", "expired"];
+  if (!lotId || !showId || !consignorId || !code || !title || !Number.isFinite(price) || price < 0) {
+    return { error: "Consignor, code, title, and a valid non-negative price are required." };
+  }
+  if (!lotStatuses.includes(lotStatus) || !holdStatuses.includes(holdStatus)) {
+    return { error: "Select valid lot and hold statuses." };
+  }
+  if (photos.some((photo) => !URL.canParse(photo))) return { error: "Each image link must be a valid URL." };
+
+  let opensAt: string | null = null;
+  if (opensAtValue) {
+    const date = new Date(`${opensAtValue}:00${timezone === "UTC" ? "Z" : "+07:00"}`);
+    if (Number.isNaN(date.getTime())) return { error: "Enter a valid opening date and time." };
+    opensAt = date.toISOString();
+  }
+
+  const supabase = await createClient();
+  const { data: authData } = await supabase.auth.getClaims();
+  if (!authData?.claims?.sub) return { error: "Your session has expired. Please sign in again." };
+  const { data: profile } = await supabase.from("users").select("role").eq("id", authData.claims.sub).maybeSingle();
+  if (profile?.role !== "admin") return { error: "You do not have permission to edit lots." };
+
+  const { error: lotError } = await supabase
+    .from("lots")
+    .update({
+      consignor_id: consignorId,
+      code,
+      title,
+      description: description || null,
+      photos,
+      price_idr: price,
+      status: lotStatus,
+      opens_at: opensAt,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", lotId)
+    .eq("show_id", showId);
+  if (lotError) {
+    console.error("Unable to update lot:", lotError);
+    return { error: "The lot could not be updated. Its code may already be used for this show." };
+  }
+
+  const { error: holdError } = await supabase
+    .from("lot_holds")
+    .update({ status: holdStatus })
+    .eq("lot_id", lotId);
+  if (holdError) {
+    console.error("Unable to update lot holds:", holdError);
+    return { error: "The lot was updated, but its hold status could not be updated." };
+  }
+
+  revalidatePath(`/admin/shows/${showId}`);
+  revalidatePath(`/shows/${showId}`);
+  return { success: "Lot updated." };
+}
+
 export async function setShowStreamStatus(
   showId: string,
   status: "live" | "ended",

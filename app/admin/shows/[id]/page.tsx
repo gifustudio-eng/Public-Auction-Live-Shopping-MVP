@@ -12,6 +12,7 @@ type LotStatus = "pending" | "live" | "held" | "sold" | "released";
 
 type Lot = {
   id: string;
+  consignor_id: string;
   code: string;
   title: string;
   description: string | null;
@@ -63,7 +64,7 @@ export default async function AdminShowDetailPage({
         .maybeSingle(),
       supabase
         .from("lots")
-        .select("id, code, title, description, photos, price_idr, seq, status, opens_at")
+        .select("id, consignor_id, code, title, description, photos, price_idr, seq, status, opens_at")
         .eq("show_id", id)
         .in("status", ["pending", "live", "released", "sold"])
         .order("seq", { ascending: true }),
@@ -141,6 +142,7 @@ export default async function AdminShowDetailPage({
               ) : (
                 <LiveLots
                   admin
+                  consignors={consignors ?? []}
                   initialLots={showLots}
                   showId={show.id}
                   userId={authData.claims.sub as string}
