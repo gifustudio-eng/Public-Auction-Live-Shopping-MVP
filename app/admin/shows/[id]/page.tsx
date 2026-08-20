@@ -2,6 +2,7 @@ import { AuctionHeader } from "@/components/auction-header";
 import { AdminAddLotPanel } from "@/components/admin-add-lot-panel";
 import { DeleteLotButton } from "@/components/delete-lot-button";
 import { LotCard } from "@/components/lot-card";
+import { ShowAudienceCount } from "@/components/show-audience-count";
 import { createClient } from "@/lib/supabase/server";
 import { ArrowLeft, Clock3 } from "lucide-react";
 import Link from "next/link";
@@ -121,6 +122,9 @@ export default async function AdminShowDetailPage({
               <h1 className="mt-3 text-3xl font-semibold tracking-[-0.035em] sm:text-4xl">
                 {show.title}
               </h1>
+              <div className="mt-5">
+                <ShowAudienceCount showId={show.id} userId={authData.claims.sub as string} isAdmin />
+              </div>
             </div>
             {show.notes && <p className="mt-6 max-w-3xl leading-7 text-black/55">{show.notes}</p>}
           </div>

@@ -14,6 +14,7 @@ export function CreateShowForm({
     title: string;
     scheduledDate: string;
     scheduledTime: string;
+    status: "draft" | "live" | "ended";
     streamPlaybackUrl: string | null;
     notes: string | null;
   };
@@ -49,6 +50,21 @@ export function CreateShowForm({
         </div>
         <p className="text-sm text-black/45">Select a date from the calendar, then choose the start time.</p>
       </fieldset>
+      {show && (
+        <label className="grid gap-2 text-sm font-medium">
+          Show status
+          <select
+            required
+            name="status"
+            defaultValue={show.status}
+            className="rounded-xl border border-black/15 bg-white px-4 py-3 text-base outline-none transition focus:border-[#f15a29] focus:ring-2 focus:ring-[#f15a29]/20"
+          >
+            <option value="draft">Draft</option>
+            <option value="live">Live</option>
+            <option value="ended">Ended</option>
+          </select>
+        </label>
+      )}
       <label className="grid gap-2 text-sm font-medium">
         Stream playback URL <span className="font-normal text-black/45">(optional)</span>
         <input name="stream_playback_url" type="url" defaultValue={show?.streamPlaybackUrl ?? ""} placeholder="https://…" className="rounded-xl border border-black/15 bg-white px-4 py-3 text-base outline-none transition focus:border-[#f15a29] focus:ring-2 focus:ring-[#f15a29]/20" />
@@ -60,7 +76,7 @@ export function CreateShowForm({
       {state.error && <p role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800">{state.error}</p>}
       {state.success && <p role="status" className="rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{state.success}</p>}
       <button type="submit" disabled={isPending} className="w-full rounded-xl bg-[#f15a29] px-5 py-3 font-semibold text-white transition hover:bg-[#d94719] disabled:cursor-not-allowed disabled:opacity-60 sm:w-fit">
-        {isPending ? (show ? "Saving show…" : "Creating show…") : show ? "Save changes" : "Create show"}
+        {isPending ? (show ? "Saving show…" : "Creating show…") : show ? "Save Changes" : "Create show"}
       </button>
     </form>
   );

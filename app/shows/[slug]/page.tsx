@@ -9,6 +9,7 @@ import {
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { LotCard } from "@/components/lot-card";
+import { ShowAudienceCount } from "@/components/show-audience-count";
 
 type Show = {
   id: string;
@@ -31,10 +32,19 @@ type Lot = {
   opens_at: string | null;
 };
 
-async function getViewerId() {
+async function getViewer() {
   const supabase = await createClient();
   const { data } = await supabase.auth.getClaims();
-  return data?.claims?.sub ?? null;
+  const userId = data?.claims?.sub;
+  if (!userId) return { id: null, isAdmin: false };
+
+  const { data: profile } = await supabase
+    .from("users")
+    .select("role")
+    .eq("id", userId)
+    .maybeSingle();
+
+  return { id: userId, isAdmin: profile?.role === "admin" };
 }
 
 async function getShow(id: string) {
@@ -127,8 +137,8 @@ export default async function LiveShowPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const [viewerId, show, availableLots] = await Promise.all([
-    getViewerId(),
+  const [viewer, show, availableLots] = await Promise.all([
+    getViewer(),
     getShow(slug),
     getAvailableLots(slug),
   ]);
@@ -184,6 +194,11 @@ export default async function LiveShowPage({
               <span className="inline-flex shrink-0 items-center gap-2 rounded-full bg-[#52705b]/10 px-3 py-2 text-xs font-semibold text-[#52705b]">
                 <ShieldCheck className="size-4" /> Secure claiming
               </span>
+              <ShowAudienceCount
+                showId={show.id}
+                userId={viewer.id}
+                isAdmin={viewer.isAdmin}
+              />
             </div>
 
             {show.notes && (
@@ -195,7 +210,7 @@ export default async function LiveShowPage({
 
           <ActiveLots
             lots={availableLots.lots}
-            userId={viewerId}
+            userId={viewer.id}
             hasError={availableLots.error}
           />
         </div>

@@ -83,9 +83,13 @@ export async function updateShow(
   const scheduledTimeValue = String(formData.get("scheduled_time") ?? "").trim();
   const streamPlaybackUrl = String(formData.get("stream_playback_url") ?? "").trim();
   const notes = String(formData.get("notes") ?? "").trim();
+  const status = String(formData.get("status") ?? "").trim();
 
-  if (!id || !title || !scheduledDateValue || !scheduledTimeValue) {
+  if (!id || !title || !scheduledDateValue || !scheduledTimeValue || !status) {
     return { error: "A show title and scheduled time are required." };
+  }
+  if (!(["draft", "live", "ended"] as const).includes(status as "draft" | "live" | "ended")) {
+    return { error: "Select a valid show status." };
   }
 
   const scheduledDate = new Date(`${scheduledDateValue}T${scheduledTimeValue}:00+07:00`);
@@ -119,6 +123,8 @@ export async function updateShow(
       scheduled_at: scheduledDate.toISOString(),
       stream_playback_url: streamPlaybackUrl || null,
       notes: notes || null,
+      status,
+      updated_at: new Date().toISOString(),
     })
     .eq("id", id);
 

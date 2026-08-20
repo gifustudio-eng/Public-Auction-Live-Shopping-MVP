@@ -47,7 +47,7 @@ export default async function EditShowPage({
       .maybeSingle(),
     supabase
       .from("shows")
-      .select("id, title, scheduled_at, stream_playback_url, notes")
+      .select("id, title, status, scheduled_at, stream_playback_url, notes")
       .eq("id", id)
       .maybeSingle(),
   ]);
@@ -80,6 +80,7 @@ export default async function EditShowPage({
             title: show.title,
             scheduledDate: scheduled.date,
             scheduledTime: scheduled.time,
+            status: show.status as "draft" | "live" | "ended",
             streamPlaybackUrl: show.stream_playback_url,
             notes: show.notes,
           }}
