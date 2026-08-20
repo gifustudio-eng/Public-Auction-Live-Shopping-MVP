@@ -26,7 +26,7 @@ export function AuctionHeader({
   shippingAddress?: string;
 }) {
   return (
-    <header className="border-b border-black/10 bg-[#f7f4ed]">
+    <header className="border-b border-black/10 bg-[#f7f4ed] text-[#171712]">
       <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6 lg:px-10">
         <Brand />
         {email && (

@@ -81,10 +81,10 @@ async function ShowsList() {
         const scheduledDate = new Date(show.scheduled_at);
         const createdDate = new Date(show.created_at);
         const isLive = show.status.toLowerCase() === "live";
-        const isFirst = index === 0;
+        const canOpenShow = isLive;
         const card = (
           <article
-            className={`grid overflow-hidden rounded-3xl border border-black/10 bg-white md:grid-cols-[190px_1fr_auto] ${isFirst ? "group transition-transform duration-300 hover:-translate-y-1" : ""}`}
+            className={`grid overflow-hidden rounded-3xl border border-black/10 bg-white md:grid-cols-[190px_1fr_auto] ${canOpenShow ? "group transition-transform duration-300 hover:-translate-y-1" : ""}`}
           >
             <div className={`relative flex min-h-44 flex-col justify-between bg-gradient-to-br ${cardTones[index % cardTones.length]} p-6 text-white`}>
               <Sparkles className="size-6 text-[#f6c453]" />
@@ -113,7 +113,7 @@ async function ShowsList() {
               )}
             </div>
 
-            {isFirst && (
+            {canOpenShow && (
               <div className="flex items-center p-6 pt-0 md:p-8">
                 <span className="flex size-11 items-center justify-center rounded-full border border-black/10 text-black/55 transition-colors group-hover:border-[#f15a29] group-hover:bg-[#f15a29] group-hover:text-white">
                   <ArrowRight className="size-4" />
@@ -123,7 +123,7 @@ async function ShowsList() {
           </article>
         );
 
-        return isFirst ? (
+        return canOpenShow ? (
           <Link
             key={show.id}
             href={`/shows/${show.id}`}

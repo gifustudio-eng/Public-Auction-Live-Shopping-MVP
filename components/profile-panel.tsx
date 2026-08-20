@@ -89,7 +89,7 @@ export function ProfilePanel({
         type="button"
         variant="ghost"
         onClick={() => setIsOpen(true)}
-        className="max-w-48 rounded-full px-3 shadow-none hover:bg-black/5"
+        className="max-w-48 rounded-full px-3 text-[#171712] shadow-none transition-colors hover:bg-[#f15a29] hover:text-white"
       >
         <UserRound className="size-4" />
         <span className="truncate">{savedName.trim() || "Profile"}</span>
