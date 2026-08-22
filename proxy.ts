@@ -1,8 +1,56 @@
-import { updateSession } from "@/lib/supabase/proxy";
-import { type NextRequest } from "next/server";
+import { createServerClient } from "@supabase/ssr";
+import { NextResponse, type NextRequest } from "next/server";
+import { hasEnvVars } from "./lib/utils"; // Sesuaikan jika utils.ts Anda ada di root juga
 
 export async function proxy(request: NextRequest) {
-  return updateSession(request);
+  return await updateSession(request);
+}
+
+async function updateSession(request: NextRequest) {
+  let supabaseResponse = NextResponse.next({
+    request,
+  });
+
+  if (!hasEnvVars) {
+    return supabaseResponse;
+  }
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) =>
+            request.cookies.set(name, value),
+          );
+          supabaseResponse = NextResponse.next({
+            request,
+          });
+          cookiesToSet.forEach(({ name, value, options }) =>
+            supabaseResponse.cookies.set(name, value, options),
+          );
+        },
+      },
+    },
+  );
+
+  const { data } = await supabase.auth.getClaims();
+  const user = data?.claims;
+
+  const isAuthPage = request.nextUrl.pathname.startsWith("/auth") || 
+                     request.nextUrl.pathname.startsWith("/login");
+
+  if (!user && !isAuthPage) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/auth/login";
+    return NextResponse.redirect(url);
+  }
+
+  return supabaseResponse;
 }
 
 export const config = {
