@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, ShoppingBag } from "lucide-react";
+import { ChevronDown, Plus, ShoppingBag } from "lucide-react";
 import { useActionState, useEffect, useRef, useState, type ReactNode } from "react";
 
 import { createLot, type CreateLotState } from "@/app/admin/actions";
@@ -22,6 +22,7 @@ export function AdminAddLotPanel({
   showTitle: string;
 }) {
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isQueueOpen, setIsQueueOpen] = useState(true);
   const [state, formAction, isPending] = useActionState(createLot, initialState);
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -33,12 +34,15 @@ export function AdminAddLotPanel({
   }, [state.success]);
 
   return (
-    <aside className="rounded-3xl border border-black/10 bg-white p-5 lg:sticky lg:top-6 lg:self-start">
-      <div className="flex items-center justify-between border-b border-black/10 pb-4">
-        <div>
+    <aside className="rounded-2xl border border-black/10 bg-[#f7f4ed]">
+      <div className="flex items-center justify-between border-b border-black/10 p-4">
+        <button type="button" onClick={() => setIsQueueOpen((open) => !open)} aria-expanded={isQueueOpen} className="flex min-w-0 items-center gap-3 text-left">
+          <ChevronDown className={`size-4 shrink-0 text-black/50 transition-transform ${isQueueOpen ? "rotate-180" : ""}`} />
+          <div>
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#d94719]">Auction queue</p>
           <h2 className="mt-1 text-xl font-semibold tracking-[-0.025em]">Active lots</h2>
-        </div>
+          </div>
+        </button>
         <div className="flex items-center gap-2">
           <button type="button" aria-expanded={isFormOpen} aria-label={`Add a new lot to ${showTitle}`} onClick={() => setIsFormOpen((open) => !open)} className="flex size-9 items-center justify-center rounded-full border border-[#f15a29]/25 text-[#d94719] transition hover:bg-[#f15a29] hover:text-white">
             <Plus className="size-4" aria-hidden="true" />
@@ -48,7 +52,7 @@ export function AdminAddLotPanel({
       </div>
 
       {isFormOpen && (
-        <form ref={formRef} action={formAction} className="mt-4 rounded-2xl bg-[#f7f4ed] p-4">
+        <form ref={formRef} action={formAction} className="mx-4 mt-4 min-w-0 overflow-hidden rounded-2xl bg-white p-4 [&_input]:min-w-0 [&_input]:w-full [&_select]:min-w-0 [&_select]:w-full [&_textarea]:min-w-0 [&_textarea]:w-full">
           <input type="hidden" name="show_id" value={showId} />
           <p className="text-sm font-semibold">Add new lot</p>
           <div className="mt-4 grid gap-3">
@@ -73,7 +77,7 @@ export function AdminAddLotPanel({
             <label className="grid gap-1.5 text-xs font-medium">Price (IDR)
               <input required name="price_idr" type="number" min="0" step="0.01" className="rounded-lg border border-black/15 bg-white px-3 py-2 text-sm" />
             </label>
-            <div className="grid grid-cols-[1fr_8rem] gap-2">
+            <div className="grid grid-cols-1 gap-2">
               <label className="grid gap-1.5 text-xs font-medium">Opens at
                 <input name="opens_at" type="datetime-local" className="rounded-lg border border-black/15 bg-white px-3 py-2 text-sm" />
               </label>
@@ -88,7 +92,7 @@ export function AdminAddLotPanel({
           </div>
         </form>
       )}
-      <div className="mt-4 space-y-3">{children}</div>
+      {isQueueOpen && <div className="m-4 space-y-3">{children}</div>}
     </aside>
   );
 }

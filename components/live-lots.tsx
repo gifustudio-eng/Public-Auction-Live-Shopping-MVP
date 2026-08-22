@@ -34,21 +34,23 @@ export function LiveLots({
   admin = false,
   consignors = [],
   initialLots,
+  onlyLive = false,
   showId,
   userId,
 }: {
   admin?: boolean;
   consignors?: { id: string; name: string }[];
   initialLots: LiveLot[];
+  onlyLive?: boolean;
   showId: string;
   userId: string | null;
 }) {
-  const [lots, setLots] = useState(() => initialLots.filter(isVisible));
+  const [lots, setLots] = useState(() => initialLots.filter((lot) => onlyLive ? lot.status === "live" : isVisible(lot)));
   const [editingLotId, setEditingLotId] = useState<string>();
 
   useEffect(() => {
-    setLots(initialLots.filter(isVisible));
-  }, [initialLots]);
+    setLots(initialLots.filter((lot) => onlyLive ? lot.status === "live" : isVisible(lot)));
+  }, [initialLots, onlyLive]);
 
   useEffect(() => {
     const supabase = createClient();
@@ -71,7 +73,7 @@ export function LiveLots({
               return currentLots.filter((lot) => lot.id !== oldLot.id);
             }
 
-            if (!isVisible(newLot)) {
+            if (onlyLive ? newLot.status !== "live" : !isVisible(newLot)) {
               return currentLots.filter((lot) => lot.id !== newLot.id);
             }
 
@@ -85,7 +87,7 @@ export function LiveLots({
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [showId]);
+  }, [onlyLive, showId]);
 
   if (lots.length === 0) {
     return (
@@ -112,7 +114,7 @@ export function LiveLots({
           </div>
         </>
       )}
-      <LotCard lot={lot} userId={userId} />
+      <LotCard lot={lot} userId={userId} showBuyButton={!admin} />
       {admin && editingLotId === lot.id && (
         <EditLotForm
           consignors={consignors}

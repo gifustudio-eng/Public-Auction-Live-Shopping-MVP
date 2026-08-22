@@ -26,6 +26,7 @@ type LotCardProps = {
     opens_at: string | null;
   };
   userId: string | null;
+  showBuyButton?: boolean;
 };
 
 function getPhotoUrl(photos: string[] | null) {
@@ -48,7 +49,7 @@ const priceFormatter = new Intl.NumberFormat("id-ID", {
   maximumFractionDigits: 0,
 });
 
-export function LotCard({ lot, userId }: LotCardProps) {
+export function LotCard({ lot, userId, showBuyButton = true }: LotCardProps) {
   const photoUrl = getPhotoUrl(lot.photos);
 
   return (
@@ -75,15 +76,17 @@ export function LotCard({ lot, userId }: LotCardProps) {
         </span>
       </div>
 
-      <div className="mt-1">
-        <BuyButton
-          lotId={lot.id}
-          initialStatus={lot.status}
-          opensAt={lot.opens_at}
-          priceIdr={Number(lot.price_idr)}
-          currentUserId={userId}
-        />
-      </div>
+      {showBuyButton && (
+        <div className="mt-1">
+          <BuyButton
+            lotId={lot.id}
+            initialStatus={lot.status}
+            opensAt={lot.opens_at}
+            priceIdr={Number(lot.price_idr)}
+            currentUserId={userId}
+          />
+        </div>
+      )}
     </div>
   );
 }

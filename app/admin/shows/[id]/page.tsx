@@ -1,5 +1,6 @@
 import { AuctionHeader } from "@/components/auction-header";
 import { AdminAddLotPanel } from "@/components/admin-add-lot-panel";
+import { AdminOtherLotsAccordion } from "@/components/admin-other-lots-accordion";
 import { LiveLots } from "@/components/live-lots";
 import { ShowAudienceCount } from "@/components/show-audience-count";
 import { StreamEmergencyControls } from "@/components/stream-emergency-controls";
@@ -49,6 +50,7 @@ export default async function AdminShowDetailPage({
     { data: profile },
     { data: show },
     { data: lots, error: lotsError },
+    { data: otherLots, error: otherLotsError },
     { data: consignors },
   ] =
     await Promise.all([
@@ -66,7 +68,13 @@ export default async function AdminShowDetailPage({
         .from("lots")
         .select("id, consignor_id, code, title, description, photos, price_idr, seq, status, opens_at")
         .eq("show_id", id)
-        .in("status", ["pending", "live", "released", "sold"])
+        .eq("status", "live")
+        .order("seq", { ascending: true }),
+      supabase
+        .from("lots")
+        .select("id, consignor_id, code, title, description, photos, price_idr, seq, status, opens_at")
+        .eq("show_id", id)
+        .neq("status", "live")
         .order("seq", { ascending: true }),
       supabase.from("consignors").select("id, name").order("name", { ascending: true }),
     ]);
@@ -77,7 +85,8 @@ export default async function AdminShowDetailPage({
   const playbackUrl = getPlaybackUrl(show.stream_playback_url);
   const isLive = show.status.toLowerCase() === "live";
   const showLots = (lots ?? []) as Lot[];
-  const nextLotNumber = showLots.length + 1;
+  const otherShowLots = (otherLots ?? []) as Lot[];
+  const nextLotNumber = showLots.length + otherShowLots.length + 1;
 
   return (
     <main className="min-h-svh bg-[#f7f4ed] text-[#171712]">
@@ -131,12 +140,13 @@ export default async function AdminShowDetailPage({
             <StreamEmergencyControls showId={show.id} />
           </div>
 
-          <AdminAddLotPanel
-            consignors={consignors ?? []}
-            defaultCode={`LOT-${nextLotNumber}`}
-            showId={show.id}
-            showTitle={show.title}
-          >
+          <div className="space-y-4">
+            <AdminAddLotPanel
+              consignors={consignors ?? []}
+              defaultCode={`LOT-${nextLotNumber}`}
+              showId={show.id}
+              showTitle={show.title}
+            >
               {lotsError ? (
                 <div className="rounded-2xl border border-red-200 bg-red-50 p-5 text-sm text-red-700">Lots could not be loaded. Please try again shortly.</div>
               ) : (
@@ -144,11 +154,18 @@ export default async function AdminShowDetailPage({
                   admin
                   consignors={consignors ?? []}
                   initialLots={showLots}
+                  onlyLive
                   showId={show.id}
                   userId={authData.claims.sub as string}
                 />
               )}
-          </AdminAddLotPanel>
+            </AdminAddLotPanel>
+            {otherLotsError ? (
+              <div className="rounded-2xl border border-red-200 bg-red-50 p-5 text-sm text-red-700">Other lots could not be loaded. Please try again shortly.</div>
+            ) : (
+              <AdminOtherLotsAccordion consignors={consignors ?? []} initialLots={otherShowLots} showId={show.id} />
+            )}
+          </div>
         </div>
       </section>
     </main>

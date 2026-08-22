@@ -45,7 +45,7 @@ export function EditLotForm({
   }, [onClose, state.success]);
 
   return (
-    <form ref={formRef} action={formAction} className="mt-3 rounded-2xl bg-[#f7f4ed] p-4">
+    <form ref={formRef} action={formAction} className="mt-3 min-w-0 overflow-hidden rounded-2xl bg-[#f7f4ed] p-4 [&_input]:min-w-0 [&_input]:w-full [&_select]:min-w-0 [&_select]:w-full [&_textarea]:min-w-0 [&_textarea]:w-full">
       <input type="hidden" name="lot_id" value={lot.id} />
       <input type="hidden" name="show_id" value={showId} />
       <p className="text-sm font-semibold">Edit lot</p>
@@ -67,7 +67,7 @@ export function EditLotForm({
         <label className="grid gap-1.5 text-xs font-medium">Lot hold status
           <select name="hold_status" defaultValue="active" className="rounded-lg border border-black/15 bg-white px-3 py-2 text-sm"><option value="active">Active</option><option value="converted">Converted</option><option value="expired">Expired</option></select>
         </label>
-        <div className="grid grid-cols-[1fr_8rem] gap-2">
+        <div className="grid grid-cols-1 gap-2">
           <label className="grid gap-1.5 text-xs font-medium">Opens at<input name="opens_at" type="datetime-local" defaultValue={wibDateTime(lot.opens_at)} className="rounded-lg border border-black/15 bg-white px-3 py-2 text-sm" /></label>
           <label className="grid gap-1.5 text-xs font-medium">Timezone<select name="timezone" defaultValue="Asia/Jakarta" className="rounded-lg border border-black/15 bg-white px-2 py-2 text-sm"><option value="Asia/Jakarta">WIB</option><option value="UTC">UTC</option></select></label>
         </div>
