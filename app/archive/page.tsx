@@ -1,16 +1,15 @@
 import { AuctionHeader } from "@/components/auction-header";
 import { createClient } from "@/lib/supabase/server";
-import { Archive, ArrowLeft, CalendarDays, Check, PackageCheck } from "lucide-react";
+import { Archive, ArrowLeft, CalendarDays, PackageCheck } from "lucide-react";
 import Link from "next/link";
 
-const pastShows = [
-  { date: "Aug 2, 2026", title: "Rare Books & First Editions", lots: 32, sold: 27, accent: "bg-[#a9593b]" },
-  { date: "Jul 26, 2026", title: "Studio Ceramics", lots: 24, sold: 22, accent: "bg-[#68755f]" },
-  { date: "Jul 18, 2026", title: "Jewels With a Story", lots: 41, sold: 35, accent: "bg-[#866c79]" },
-  { date: "Jul 9, 2026", title: "The Collector’s Cabinet", lots: 28, sold: 25, accent: "bg-[#a67b37]" },
-  { date: "Jun 28, 2026", title: "Postwar Prints", lots: 36, sold: 31, accent: "bg-[#536b75]" },
-  { date: "Jun 20, 2026", title: "Vintage Utility", lots: 30, sold: 26, accent: "bg-[#5d594b]" },
-];
+const accents = ["bg-[#a9593b]", "bg-[#68755f]", "bg-[#866c79]", "bg-[#a67b37]", "bg-[#536b75]", "bg-[#5d594b]"];
+
+const dateFormatter = new Intl.DateTimeFormat("en-US", {
+  dateStyle: "medium",
+  timeStyle: "short",
+  timeZone: "Asia/Jakarta",
+});
 
 async function getViewer() {
   const supabase = await createClient();
@@ -30,7 +29,10 @@ async function getViewer() {
 }
 
 export default async function ArchivePage() {
-  const viewer = await getViewer();
+  const [viewer, pastShows] = await Promise.all([
+    getViewer(),
+    getArchivedShows(),
+  ]);
 
   return (
     <main className="min-h-svh bg-[#f7f4ed] text-[#171712]">
@@ -56,9 +58,14 @@ export default async function ArchivePage() {
         </div>
 
         <div className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {pastShows.length === 0 && (
+            <p className="rounded-3xl border border-dashed border-black/15 bg-white/60 p-8 text-center text-black/55 sm:col-span-2 lg:col-span-3">
+              No completed shows are in the archive yet.
+            </p>
+          )}
           {pastShows.map((show, index) => (
-            <article key={show.title} className="overflow-hidden rounded-3xl border border-black/10 bg-white">
-              <div className={`${show.accent} relative h-44 p-6 text-white`}>
+            <article key={show.id} className="overflow-hidden rounded-3xl border border-black/10 bg-white">
+              <div className={`${accents[index % accents.length]} relative h-44 p-6 text-white`}>
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_75%_20%,rgba(255,255,255,0.25),transparent_35%)]" />
                 <span className="relative flex size-10 items-center justify-center rounded-full bg-white/15 backdrop-blur-sm">
                   <PackageCheck className="size-5" />
@@ -67,14 +74,11 @@ export default async function ArchivePage() {
               </div>
               <div className="p-6">
                 <p className="flex items-center gap-2 text-sm font-medium text-black/45">
-                  <CalendarDays className="size-4" /> {show.date}
+                  <CalendarDays className="size-4" /> {dateFormatter.format(new Date(show.scheduled_at))}
                 </p>
                 <h2 className="mt-3 text-xl font-semibold tracking-[-0.02em]">{show.title}</h2>
-                <div className="mt-6 flex items-center justify-between border-t border-black/10 pt-5 text-sm">
-                  <span className="text-black/45">{show.lots} lots offered</span>
-                  <span className="flex items-center gap-1.5 font-semibold text-[#52705b]">
-                    <Check className="size-4" /> {show.sold} sold
-                  </span>
+                <div className="mt-6 border-t border-black/10 pt-5 text-sm font-semibold text-[#52705b]">
+                  Completed auction
                 </div>
               </div>
             </article>
@@ -83,4 +87,19 @@ export default async function ArchivePage() {
       </section>
     </main>
   );
+}
+
+async function getArchivedShows() {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("shows")
+    .select("id, title, scheduled_at")
+    .eq("status", "ended")
+    .order("scheduled_at", { ascending: false });
+
+  if (error) {
+    console.error("Unable to load archived shows:", error);
+    return [];
+  }
+  return data;
 }
