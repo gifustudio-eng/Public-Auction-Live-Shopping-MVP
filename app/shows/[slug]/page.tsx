@@ -1,15 +1,12 @@
 import { createClient } from "@/lib/supabase/server";
 import {
   ArrowLeft,
-  Clock3,
-  PackageCheck,
-  ShieldCheck,
-  ShoppingBag,
 } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ShowAudienceCount } from "@/components/show-audience-count";
-import { LiveLots } from "@/components/live-lots";
+import { LiveLotPopup, type PopupLot } from "@/components/live-lot-popup";
+import { SoldLotsPopup } from "@/components/sold-lots-popup";
 
 type Show = {
   id: string;
@@ -19,17 +16,11 @@ type Show = {
   notes: string | null;
 };
 
-type LotStatus = "pending" | "live" | "held" | "sold" | "released";
-
-type Lot = {
+type SoldLot = {
   id: string;
   code: string;
   title: string;
-  description: string | null;
-  photos: string[] | null;
   price_idr: number;
-  status: LotStatus;
-  opens_at: string | null;
 };
 
 async function getViewer() {
@@ -59,23 +50,38 @@ async function getShow(id: string) {
   return data as Show;
 }
 
-async function getAvailableLots(showId: string) {
+async function getSoldLots(showId: string) {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("lots")
-    .select(
-      "id, code, title, description, photos, price_idr, status, opens_at",
-    )
+    .select("id, code, title, price_idr")
     .eq("show_id", showId)
-    .in("status", ["pending", "live", "released", "sold"])
+    .eq("status", "sold")
     .order("seq", { ascending: true });
 
   if (error) {
-    console.error("Unable to load available lots:", error);
-    return { lots: [] as Lot[], error: true };
+    console.error("Unable to load sold lots:", error);
+    return [] as SoldLot[];
   }
+  return (data ?? []) as SoldLot[];
+}
 
-  return { lots: (data ?? []) as Lot[], error: false };
+async function getCurrentLiveLot(showId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("lots")
+    .select("id, show_id, code, title, description, photos, price_idr, status, opens_at")
+    .eq("show_id", showId)
+    .eq("status", "live")
+    .order("seq", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    console.error("Unable to load current live lot:", error);
+    return null;
+  }
+  return data as PopupLot | null;
 }
 
 function getPlaybackUrl(value: string | null) {
@@ -89,130 +95,51 @@ function getPlaybackUrl(value: string | null) {
   }
 }
 
-function ActiveLots({
-  lots,
-  showId,
-  userId,
-  hasError,
-}: {
-  lots: Lot[];
-  showId: string;
-  userId: string | null;
-  hasError: boolean;
-}) {
-  return (
-    <aside className="rounded-3xl border border-black/10 bg-white p-5 lg:sticky lg:top-6 lg:self-start">
-      <div className="flex items-center justify-between border-b border-black/10 pb-4">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#d94719]">
-            Auction queue
-          </p>
-          <h2 className="mt-1 text-xl font-semibold tracking-[-0.025em]">
-            Active lots
-          </h2>
-        </div>
-        <span className="flex size-9 items-center justify-center rounded-full bg-[#f15a29]/10 text-[#d94719]">
-          <ShoppingBag className="size-4" />
-        </span>
-      </div>
-
-      <div className="mt-4 space-y-3">
-        {hasError ? (
-          <div className="rounded-2xl border border-red-200 bg-red-50 p-5 text-sm text-red-700">
-            Available lots could not be loaded. Please try again shortly.
-          </div>
-        ) : (
-          <LiveLots initialLots={lots} showId={showId} userId={userId} />
-        )}
-      </div>
-    </aside>
-  );
-}
-
 export default async function LiveShowPage({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const [viewer, show, availableLots] = await Promise.all([
+  const [viewer, show, soldLots, currentLiveLot] = await Promise.all([
     getViewer(),
     getShow(slug),
-    getAvailableLots(slug),
+    getSoldLots(slug),
+    getCurrentLiveLot(slug),
   ]);
   const playbackUrl = getPlaybackUrl(show.stream_playback_url);
   const isLive = show.status.toLowerCase() === "live";
 
   return (
-    <main className="min-h-svh bg-[#f7f4ed] text-[#171712]">
-      <section className="mx-auto max-w-7xl px-6 pb-20 pt-8 lg:px-10 lg:pb-24 lg:pt-10">
-        <div className="flex flex-wrap items-center justify-between gap-4">
+    <main className="min-h-svh bg-[#191914] text-white">
+      <section>
+        <div className="relative h-svh min-h-[32rem] overflow-hidden bg-[#191914] shadow-sm">
+          {isLive && playbackUrl ? (
+            <iframe
+              src={playbackUrl}
+              title={`${show.title} video player`}
+              className="absolute inset-0 h-full w-full border-0"
+              allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
+              allowFullScreen
+            />
+          ) : (
+            <div className="flex h-full items-center justify-center px-6 text-center text-sm text-white/60">
+              {isLive ? "A playback URL has not been added for this show yet." : "This stream is currently stopped."}
+            </div>
+          )}
+
           <Link
             href="/shows"
-            className="inline-flex items-center gap-2 text-sm font-semibold text-black/55 transition-colors hover:text-black"
+            className="absolute left-5 top-5 z-10 inline-flex h-11 items-center gap-2 rounded-xl bg-black/55 px-4 text-sm font-semibold text-white shadow-sm backdrop-blur-sm transition-colors hover:bg-black/75 sm:left-7 sm:top-7"
           >
             <ArrowLeft className="size-4" /> Back to shows
           </Link>
-          <Link
-            href={`/shows/${show.id}/sold`}
-            className="inline-flex h-11 items-center gap-2 rounded-xl border border-black/10 bg-white px-4 text-sm font-semibold text-black/65 transition-colors hover:border-black/20 hover:text-black"
-          >
-            <PackageCheck className="size-4" /> Sold lots
-          </Link>
-        </div>
-
-        <div className="mt-7 grid gap-7 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start">
-          <div className="min-w-0">
-            <div className="relative aspect-video overflow-hidden rounded-3xl bg-[#191914] shadow-sm">
-              {isLive && playbackUrl ? (
-                <iframe
-                  src={playbackUrl}
-                  title={`${show.title} video player`}
-                  className="absolute inset-0 h-full w-full border-0"
-                  allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
-                  allowFullScreen
-                />
-              ) : (
-                <div className="flex h-full items-center justify-center px-6 text-center text-sm text-white/60">
-                  {isLive ? "A playback URL has not been added for this show yet." : "This stream is currently stopped."}
-                </div>
-              )}
-            </div>
-            <div className="mt-7 flex flex-col justify-between gap-5 border-b border-black/10 pb-7 sm:flex-row sm:items-start">
-              <div>
-                <div className="flex flex-wrap items-center gap-3 text-sm font-medium text-[#d94719]">
-                  <span className="flex items-center gap-1.5 capitalize"><Clock3 className="size-4" /> {isLive ? "Live now" : show.status.replaceAll("_", " ")}</span>
-                  <span className="text-black/20">•</span>
-                  <span>Design</span>
-                </div>
-                <h1 className="mt-3 text-3xl font-semibold tracking-[-0.035em] sm:text-4xl">
-                  {show.title}
-                </h1>
-              </div>
-              <span className="inline-flex shrink-0 items-center gap-2 rounded-full bg-[#52705b]/10 px-3 py-2 text-xs font-semibold text-[#52705b]">
-                <ShieldCheck className="size-4" /> Secure claiming
-              </span>
-              <ShowAudienceCount
-                showId={show.id}
-                userId={viewer.id}
-                isAdmin={viewer.isAdmin}
-              />
-            </div>
-
-            {show.notes && (
-              <p className="mt-6 max-w-3xl leading-7 text-black/55">
-                {show.notes}
-              </p>
-            )}
+          <div className="absolute right-5 top-5 z-10 sm:right-7 sm:top-7">
+            <ShowAudienceCount showId={show.id} userId={viewer.id} isAdmin={viewer.isAdmin} />
           </div>
-
-          <ActiveLots
-            lots={availableLots.lots}
-            showId={show.id}
-            userId={viewer.id}
-            hasError={availableLots.error}
-          />
-        </div>
+          <SoldLotsPopup initialLots={soldLots} showId={show.id} />
+          <LiveLotPopup initialLot={currentLiveLot} showId={show.id} userId={viewer.id} />
+          </div>
       </section>
     </main>
   );

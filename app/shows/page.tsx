@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { AuctionHeader } from "@/components/auction-header";
 import { LiveShowsList, type PublicShow } from "@/components/live-shows-list";
 import { Archive, CalendarDays } from "lucide-react";
 import Link from "next/link";
@@ -23,11 +24,31 @@ async function ShowsList() {
   return <LiveShowsList initialShows={(data ?? []) as PublicShow[]} />;
 }
 
+async function getViewer() {
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getClaims();
+  if (!data?.claims) return {};
+
+  const email = (data.claims.email as string | undefined) ?? "";
+  const { data: profile } = await supabase
+    .from("users")
+    .select("email, full_name, shipping_address")
+    .eq("id", data.claims.sub)
+    .maybeSingle();
+
+  return {
+    email: profile?.email ?? email,
+    name: profile?.full_name ?? undefined,
+    shippingAddress: profile?.shipping_address ?? undefined,
+  };
+}
+
 export default async function ShowsPage() {
-  const showsList = await ShowsList();
+  const [viewer, showsList] = await Promise.all([getViewer(), ShowsList()]);
 
   return (
     <main className="min-h-svh bg-[#f7f4ed] text-[#171712]">
+      <AuctionHeader {...viewer} />
       <section className="mx-auto max-w-7xl px-6 pb-20 pt-14 lg:px-10 lg:pb-28 lg:pt-20">
         <div className="mb-8 flex justify-end">
           <Link
